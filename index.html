@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Studio (লাল শাড়ি পরিয়া কন্যা)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    /* Base Styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: radial-gradient(circle at top left, #1f1c2c, #3c3b5f);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Sticky Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      animation: fadeInDown 1s ease-out;
+    }
+
+    nav h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: #00ffe7;
+      text-shadow: 0 0 10px #00ffe7;
+    }
+
+    nav div a {
+      margin-left: 20px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+
+    nav div a:hover {
+      color: #00ffe7;
+    }
+
+    /* Main Content */
+    main {
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: fadeInUp 1.5s ease-out;
+    }
+
+    img {
+      width: 100%;
+      max-width: 720px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 255, 231, 0.3);
+      transition: transform 0.3s ease;
+    }
+
+    img:hover {
+      transform: scale(1.02);
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin: 20px 0;
+      color: #ff4c4c;
+      text-shadow: 0 0 5px #ff4c4c;
+    }
+
+    button {
+      background: linear-gradient(45deg, #ff4c4c, #ff6b6b);
+      color: white;
+      padding: 15px 25px;
+      margin: 10px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 1rem;
+      box-shadow: 0 0 10px #ff4c4c;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #ff4c4c;
+    }
+
+    p {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      max-width: 900px;
+      margin-top: 20px;
+      animation: fadeInUp 2s ease-out;
+    }
+
+    footer {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      text-align: center;
+      font-size: 0.9rem;
+      color: #ccc;
+      animation: fadeIn 2s ease-out;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      nav div {
+        margin-top: 10px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      button {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h1>Music Studio (লাল শাড়ি পরিয়া কন্যা)</h1>
+    <div>
+      <a href="#">Home</a>
+      <a href="#">Collection</a>
+      <a href="#">Contact</a>
+    </div>
+  </nav>
+
+  <main>
+    <a href="লাল শাড়ি পরিয়া কন্যা.mp4" target="_blank">
+      <img src="thumbnail.png" alt="Click to play video" />
+    </a>
+    <h2>লাল শাড়ি পরিয়া কন্যা</h2>
+    <a href="লাল শাড়ি পরিয়া কন্যা.mp4" download>
+      <button>🎬 Download Video</button>
+    </a>
+    <a href="লাল শাড়ি পরিয়া কন্যা কারওকে karaoke music - Fact knowledge.mp3" download>
+      <button>🎵 Download Background Music</button>
+    </a>
+  </main>
+
+  <main>
+    <h2>🎤 গায়কের সম্পর্ককিত তথ্য</h2>
+    <p>
+      বাংলাদেশের আধুনিক লোকগানের জগতে আলোড়ন তোলা শিল্পী সোহাগ ২০০৫ সালে “লাল শাড়ি পরিয়া কন্যা” গানটি প্রকাশ করেন। গানটি তৎকালীন সময়ে ৩০ লাখ ক্যাসেট বিক্রি করে রেকর্ড গড়ে। ২০২০ সালে গানটি নতুন রূপে CMV ব্যানারে প্রকাশিত হয় এবং ইউটিউবে এক মিলিয়নের বেশি ভিউ অর্জন করে। এই গানটি শুধু একটি সুর নয়, এটি একটি আবেগ, একটি সময়ের স্মৃতি যা আজও মানুষের হৃদয়ে গেঁথে আছে।
+    </p>
+  </main>
+
+  <footer>
+    <h4>&copy; ALPCG MOHI 2025</h4>
+  </footer>
+</body>
+</html>
+
