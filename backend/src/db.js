@@ -1,5 +1,5 @@
-// ==================== BloodOra - Turso / libSQL Database Layer ====================
-// Supports both Turso serverless (libsql://) and local file fallback for dev
+// ==================== BloodOra Backend - Turso / libSQL Database Layer ====================
+// Supports both Turso serverless (libsql://) and local file fallback for dev.
 import { createClient } from "@libsql/client";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
@@ -11,13 +11,9 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// NOTE: On Vercel these are plain values set in the dashboard:
-// Project -> Settings -> Environment Variables
-// (the legacy "@secret-name" references in vercel.json are no longer supported by Vercel)
 const TURSO_URL = (process.env.TURSO_DATABASE_URL || "").trim();
 const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "").trim();
 
-// Choose client config: Turso if env present, else local file
 let clientConfig;
 if (TURSO_URL.startsWith("libsql://") || TURSO_URL.startsWith("https://")) {
   clientConfig = { url: TURSO_URL, authToken: TURSO_TOKEN };
@@ -42,28 +38,28 @@ if (TURSO_URL.startsWith("libsql://") || TURSO_URL.startsWith("https://")) {
 export const db = createClient(clientConfig);
 
 // ---------- Helper wrappers ----------
+// libsql rejects `undefined` args — normalize to null everywhere.
+const clean = (args) => (Array.isArray(args) ? args.map((a) => (a === undefined ? null : a)) : args);
+
 export async function query(sql, args = []) {
-  const res = await db.execute({ sql, args });
-  return res;
+  return await db.execute({ sql, args: clean(args) });
 }
 export async function get(sql, args = []) {
-  const res = await db.execute({ sql, args });
+  const res = await db.execute({ sql, args: clean(args) });
   return res.rows[0] || null;
 }
 export async function all(sql, args = []) {
-  const res = await db.execute({ sql, args });
+  const res = await db.execute({ sql, args: clean(args) });
   return res.rows;
 }
 export async function run(sql, args = []) {
-  const res = await db.execute({ sql, args });
-  return res;
+  return await db.execute({ sql, args: clean(args) });
 }
 
 // ---------- Schema Initialization ----------
 export async function initDB() {
   console.log("🔧 Initializing BloodOra database schema...");
 
-  // Users
   await db.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,12 +97,10 @@ export async function initDB() {
       last_login_at TEXT
     );
   `);
-  // add indexes
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_district ON users(district);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_blood ON users(blood_group);`);
 
-  // Blood Requests
   await db.execute(`
     CREATE TABLE IF NOT EXISTS blood_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,7 +133,6 @@ export async function initDB() {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_br_urgent ON blood_requests(is_urgent);`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_br_fulfilled ON blood_requests(is_fulfilled);`);
 
-  // Messages
   await db.execute(`
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,7 +147,6 @@ export async function initDB() {
     );
   `);
 
-  // Anti-D Info
   await db.execute(`
     CREATE TABLE IF NOT EXISTS anti_d_info (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,7 +159,6 @@ export async function initDB() {
     );
   `);
 
-  // Site Notice
   await db.execute(`
     CREATE TABLE IF NOT EXISTS site_notice (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,7 +168,6 @@ export async function initDB() {
     );
   `);
 
-  // Resources
   await db.execute(`
     CREATE TABLE IF NOT EXISTS resources (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -190,7 +180,6 @@ export async function initDB() {
     );
   `);
 
-  // Site Settings
   await db.execute(`
     CREATE TABLE IF NOT EXISTS site_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,7 +201,6 @@ export async function initDB() {
     );
   `);
 
-  // Products
   await db.execute(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -227,7 +215,6 @@ export async function initDB() {
     );
   `);
 
-  // Orders
   await db.execute(`
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -251,7 +238,6 @@ export async function initDB() {
     );
   `);
 
-  // Order Items
   await db.execute(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -282,7 +268,6 @@ export async function initDB() {
     await run(`INSERT INTO resources (title, category, content, is_featured) VALUES (?, ?, ?, ?)`, ["Healthy Lifestyle", "Health", "Tips for maintaining good health as a donor.", 0]);
     console.log("✅ Seeded resources");
   }
-  // Seed sample products if empty
   const prodCount = await get("SELECT COUNT(*) as c FROM products");
   if (prodCount && prodCount.c == 0) {
     const samples = [
@@ -303,14 +288,11 @@ export async function initDB() {
     console.log("✅ Seeded 10 sample products");
   }
 
-  // ---------- Provision Super Admin from .env ----------
   await seedSuperAdmin();
-
   console.log("✅ Database initialization complete!");
 }
 
 // Creates/confirms a Super Admin account driven entirely by environment variables.
-// Set SUPER_ADMIN_EMAIL + SUPER_ADMIN_PASSWORD (optionally NAME / PHONE) in .env.
 export async function seedSuperAdmin() {
   const email = (process.env.SUPER_ADMIN_EMAIL || "").trim().toLowerCase();
   if (!email) {
@@ -348,7 +330,7 @@ export async function seedSuperAdmin() {
   console.log("✅ Provisioned Super Admin:", email);
 }
 
-// Auto-init if run directly
+// Auto-init if run directly:  node src/db.js --init
 if (process.argv.includes("--init")) {
   initDB().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
 }
