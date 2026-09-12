@@ -1,0 +1,23 @@
+<%- include('partials/header') %>
+<div class="container mt-4">
+  <h2 class="fw-bold mb-3"><i class="fas fa-vial text-danger me-2"></i>Blood Compatibility</h2>
+  <div class="card border-0 shadow-sm" style="border-radius:18px;">
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr><th>Blood Group</th><th>Can Donate To</th><th>Can Receive From</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge bg-danger">O-</span></td><td>All groups (Universal Donor)</td><td>O-</td></tr>
+          <tr><td><span class="badge bg-danger">O+</span></td><td>O+, A+, B+, AB+</td><td>O-, O+</td></tr>
+          <tr><td><span class="badge bg-danger">A-</span></td><td>A-, A+, AB-, AB+</td><td>A-, O-</td></tr>
+          <tr><td><span class="badge bg-danger">A+</span></td><td>A+, AB+</td><td>A-, A+, O-, O+</td></tr>
+          <tr><td><span class="badge bg-danger">B-</span></td><td>B-, B+, AB-, AB+</td><td>B-, O-</td></tr>
+          <tr><td><span class="badge bg-danger">B+</span></td><td>B+, AB+</td><td>B-, B+, O-, O+</td></tr>
+          <tr><td><span class="badge bg-danger">AB-</span></td><td>AB-, AB+</td><td>AB-, A-, B-, O-</td></tr>
+          <tr><td><span class="badge bg-danger">AB+</span></td><td>AB+ only</td><td>All (Universal Recipient)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="alert alert-info border-0 mt-3" style="border-radius:14px;">💡 Rh factor matters — always cross-match before transfusion.</div>
+</div>
+<%- include('partials/footer') %>

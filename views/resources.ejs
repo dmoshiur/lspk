@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+<div class="container mt-4">
+  <h2 class="fw-bold mb-3"><i class="fas fa-graduation-cap text-danger me-2"></i>Educational Resources</h2>
+  <div class="d-flex gap-2 mb-3">
+    <a href="/resources" class="btn btn-sm <%= !query || !query.category ? 'btn-danger':'btn-outline-danger' %> rounded-pill">All</a>
+    <a href="/resources?category=Donation" class="btn btn-sm <%= query && query.category==='Donation'?'btn-danger':'btn-outline-danger' %> rounded-pill">Donation</a>
+    <a href="/resources?category=First-Aid" class="btn btn-sm <%= query && query.category==='First-Aid'?'btn-danger':'btn-outline-danger' %> rounded-pill">First-Aid</a>
+    <a href="/resources?category=Health" class="btn btn-sm <%= query && query.category==='Health'?'btn-danger':'btn-outline-danger' %> rounded-pill">Health</a>
+  </div>
+  <div class="row g-3">
+    <% if (resources && resources.length){ %>
+      <% resources.forEach(r=>{ %>
+        <div class="col-md-6">
+          <div class="card border-0 shadow-sm h-100" style="border-radius:18px;">
+            <div class="card-body">
+              <div class="d-flex justify-content-between"><span class="badge bg-light text-dark border rounded-pill"><%= r.category||'General' %></span><% if(r.is_featured){ %><span class="badge bg-warning text-dark rounded-pill">Featured</span><% } %></div>
+              <h5 class="fw-bold mt-2"><%= r.title %></h5>
+              <p class="text-muted small"><%= r.content %></p>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="col-12"><div class="alert alert-info border-0 rounded-4 text-center">No resources found.</div></div>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>
