@@ -5,6 +5,7 @@ import { get, run } from "../db.js";
 import { signToken, genSessionToken, requireAuth } from "../auth.js";
 import { upload } from "../upload.js";
 import { getClientIp, getDeviceFingerprint, calculateAge, normalizeUser, tryCatch } from "../utils.js";
+import { recordActivity, initials } from "../activity.js";
 
 const router = express.Router();
 
@@ -54,6 +55,12 @@ router.post("/register", upload.single("profile_pic"), (req, res) =>
     const user = await get("SELECT * FROM users WHERE email = ?", [email]);
     const jwtToken = signToken(user);
     const { password_hash, ...safeUser } = normalizeUser(user);
+    await recordActivity(
+      "donor_joined",
+      `${initials(name)} joined BloodOra`,
+      `${blood_group || "Donor"} • ${upazila || district || division || "Bangladesh"}`,
+      "/donors"
+    );
     res.json({
       success: true,
       token: jwtToken,

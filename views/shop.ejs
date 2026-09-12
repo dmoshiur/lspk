@@ -8,6 +8,20 @@
     <a href="/shop/cart" class="btn btn-danger"><i class="fas fa-cart-shopping me-2"></i>View Cart <% if (typeof sessionCartCount !== 'undefined' && sessionCartCount) { %><span class="badge bg-white text-danger ms-2"><%= sessionCartCount %></span><% } %></a>
   </div>
 
+  <% if (typeof shopError !== 'undefined' && shopError) { %>
+    <div class="alert alert-danger border-0 rounded-4 d-flex align-items-start gap-3 mb-4" role="alert">
+      <i class="fas fa-plug-circle-exclamation fa-lg mt-1"></i>
+      <div>
+        <div class="fw-bold mb-1"><%= lang==='bn' ? 'ক্যাটালগ লোড করা যায়নি' : lang==='ar' ? 'تعذّر تحميل الكتالوج' : 'The catalogue could not be loaded' %></div>
+        <div class="small"><%= shopError %></div>
+        <div class="small mt-2">
+          <a href="/shop" class="btn btn-sm btn-danger rounded-pill me-1"><i class="fas fa-rotate me-1"></i><%= t('common_retry') %></a>
+          <button class="btn btn-sm btn-outline-primary rounded-pill" style="border-color:#c7d2fe; color:#4338ca;" onclick="document.getElementById('bo-ai-fab')?.click()"><i class="fas fa-robot me-1"></i><%= t('err_ai') %></button>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
   <!-- Filters -->
   <div class="card p-3 mb-4 border-0 shadow-sm" style="border-radius:18px; background:#fff;">
     <form method="GET" class="row g-2 align-items-center">

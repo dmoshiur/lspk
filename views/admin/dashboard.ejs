@@ -1,13 +1,7 @@
 <%- include('../partials/header') %>
 <style>
-  .admin-wrapper{ display:flex; min-height:70vh; }
-  .sidebar{ width:260px; background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#fff; border-radius:18px; padding:18px; position:sticky; top:88px; height:fit-content; }
-  .sidebar a{ color:#cbd5e1; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; font-weight:600; font-size:.9rem; transition:all .2s; }
-  .sidebar a:hover, .sidebar a.active{ background:rgba(255,255,255,.08); color:#fff; }
-  .sidebar a.active{ background:linear-gradient(135deg,var(--primary),#ff3340); box-shadow:0 8px 20px rgba(227,27,35,.3); }
   .stat-card{ background:#fff; border-radius:18px; padding:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(15,23,42,.06); display:flex; align-items:center; gap:14px; }
   .stat-icon{ width:48px;height:48px;border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; }
-  @media(max-width:991px){ .sidebar{ width:100%; position:static; } .admin-wrapper{flex-direction:column;} }
 </style>
 
 <div class="container mt-4">
@@ -20,26 +14,7 @@
   </div>
 
   <div class="admin-wrapper gap-4">
-    <aside class="sidebar">
-      <div class="text-center py-2">
-        <div class="fw-bold" style="letter-spacing:-.02em;"><i class="fas fa-tint text-danger me-2"></i>BloodOra Admin</div>
-        <small style="color:#94a3b8;"><%= currentUser.name %></small>
-      </div>
-      <hr style="border-color:rgba(255,255,255,.08);">
-      <nav class="d-grid gap-1">
-        <a class="active" href="/admin"><i class="fas fa-gauge"></i> Overview</a>
-        <a href="/shop/admin/products"><i class="fas fa-box"></i> Products</a>
-        <a href="/shop/admin/orders"><i class="fas fa-cart-shopping"></i> Orders <% if(stats.pending_orders){ %><span class="badge bg-warning text-dark ms-auto"><%= stats.pending_orders %></span><% } %></a>
-        <a href="/messages/admin/messages"><i class="fas fa-envelope"></i> Messages <% if(stats.unread_messages){ %><span class="badge bg-danger ms-auto"><%= stats.unread_messages %></span><% } %></a>
-        <a href="/admin/settings"><i class="fas fa-gear"></i> Settings</a>
-        <a href="/blood-requests"><i class="fas fa-tint"></i> Blood Requests <% if(stats.urgent_requests){ %><span class="badge bg-danger ms-auto"><%= stats.urgent_requests %></span><% } %></a>
-      </nav>
-      <hr style="border-color:rgba(255,255,255,.08);">
-      <div class="d-grid gap-2">
-        <a href="/" class="btn btn-light btn-sm rounded-pill" style="justify-content:center;"><i class="fas fa-home me-2"></i>Back to Site</a>
-        <a href="/admin/backup-database" class="btn btn-outline-light btn-sm rounded-pill" style="justify-content:center; border-color:rgba(255,255,255,.2); color:#fff;"><i class="fas fa-download me-2"></i>Backup DB</a>
-      </div>
-    </aside>
+    <%- include('_sidebar', { active: 'dashboard', stats: stats }) %>
 
     <main class="flex-grow-1" style="min-width:0;">
       <!-- Stats -->

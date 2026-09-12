@@ -12,3 +12,6 @@ npm-debug.log*
 dist/
 .vercel
 .netlify
+
+# local test scratch (curl cookie jars, temp output)
+.tmp/

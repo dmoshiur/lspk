@@ -22,6 +22,9 @@ import bloodRoutes from "./routes/blood.js";
 import shopRoutes from "./routes/shop.js";
 import messageRoutes from "./routes/messages.js";
 import adminRoutes from "./routes/admin.js";
+import supportRoutes from "./routes/support.js";
+import aiRoutes from "./routes/ai.js";
+import reviewRoutes from "./routes/reviews.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +91,9 @@ export async function createApp() {
   app.use("/api/shop", shopRoutes);
   app.use("/api/messages", messageRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/support", supportRoutes);   // real human Live Messaging
+  app.use("/api/reviews", reviewRoutes);   // reviews + testimonials
+  app.use("/api/ai", aiRoutes);            // Live AI Help (Groq / Qwen3.6 27B)
 
   app.get("/health", (req, res) => res.redirect("/api/health"));
   app.get("/", (req, res) =>

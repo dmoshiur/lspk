@@ -1,23 +1,219 @@
 <%- include('partials/header') %>
-<div class="container mt-4">
-  <h2 class="fw-bold mb-3"><i class="fas fa-vial text-danger me-2"></i>Blood Compatibility</h2>
-  <div class="card border-0 shadow-sm" style="border-radius:18px;">
-    <div class="table-responsive">
-      <table class="table mb-0">
-        <thead><tr><th>Blood Group</th><th>Can Donate To</th><th>Can Receive From</th></tr></thead>
-        <tbody>
-          <tr><td><span class="badge bg-danger">O-</span></td><td>All groups (Universal Donor)</td><td>O-</td></tr>
-          <tr><td><span class="badge bg-danger">O+</span></td><td>O+, A+, B+, AB+</td><td>O-, O+</td></tr>
-          <tr><td><span class="badge bg-danger">A-</span></td><td>A-, A+, AB-, AB+</td><td>A-, O-</td></tr>
-          <tr><td><span class="badge bg-danger">A+</span></td><td>A+, AB+</td><td>A-, A+, O-, O+</td></tr>
-          <tr><td><span class="badge bg-danger">B-</span></td><td>B-, B+, AB-, AB+</td><td>B-, O-</td></tr>
-          <tr><td><span class="badge bg-danger">B+</span></td><td>B+, AB+</td><td>B-, B+, O-, O+</td></tr>
-          <tr><td><span class="badge bg-danger">AB-</span></td><td>AB-, AB+</td><td>AB-, A-, B-, O-</td></tr>
-          <tr><td><span class="badge bg-danger">AB+</span></td><td>AB+ only</td><td>All (Universal Recipient)</td></tr>
-        </tbody>
-      </table>
+<%
+  const _t   = (typeof t === 'function') ? t : (k) => k;
+  const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  const _ref = (typeof reference !== 'undefined' && reference) ? reference : null;
+  const _bn = (lang === 'bn');
+  const _ar = (lang === 'ar');
+  const GROUPS = ['O−','O+','A−','A+','B−','B+','AB−','AB+'];
+  const canGive = (from, to) => {
+    if (!_ref) return false;
+    const row = _ref.rbc.find(r => r.group === from);
+    if (!row) return false;
+    return row.donatesTo.split(',').map(s => s.trim()).indexOf(to) >= 0;
+  };
+%>
+
+<div class="container mt-4 mb-5">
+  <div class="text-center mb-4">
+    <div class="eyebrow mb-2">Clinical reference</div>
+    <h1 class="display-title mb-2"><i class="fas fa-vial text-danger me-2"></i><%= _t('nav_compatibility') %></h1>
+    <p class="text-muted mb-0" style="max-width:80ch; margin-inline:auto;">
+      <%= _bn
+        ? 'সম্পূর্ণ ABO ও RhD সামঞ্জস্যতা-রেফারেন্স — লোহিত কণিকা, প্লাজমা, প্লেটলেট, রক্ত-উপাদানের সংরক্ষণ ও জরুরি ট্রান্সফিউশনের নিয়ম।'
+        : _ar
+        ? 'مرجع كامل لتوافق ABO و RhD — كريات حمراء، بلازما، صفائح، تخزين مكونات الدم وقواعد النقل الطارئ.'
+        : 'The complete ABO and RhD compatibility reference — red cells, plasma, platelets, component storage and the emergency transfusion rules.' %>
+    </p>
+  </div>
+
+  <% if (typeof loadError !== 'undefined' && loadError) { %>
+    <div class="alert alert-warning border-0 rounded-4 mb-4"><i class="fas fa-triangle-exclamation me-2"></i><%= lang==='bn'?'লাইভ ডেটা লোড করা যায়নি — বিল্ট-ইন রেফারেন্স দেখানো হচ্ছে।':'The live data could not be loaded — showing the built-in reference.' %></div>
+  <% } %>
+
+  <% if (_ref) { %>
+  <!-- ---------- Interactive donor → recipient matrix ---------- -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:22px;">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h2 class="h5 fw-bold mb-0"><i class="fas fa-table-cells me-2 text-danger"></i><%= _bn?'ইন্টারঅ্যাক্টিভ ম্যাট্রিক্স':_ar?'مصفوفة تفاعلية':'Interactive red-cell matrix' %></h2>
+        <div class="small text-muted"><%= _bn?'সারি = দাতা, কলাম = গ্রহীতা':_ar?'الصف = المتبرع، العمود = المستقبل':'Row = donor, Column = recipient' %></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center mb-0" style="min-width:640px;">
+          <thead>
+            <tr>
+              <th style="width:110px;"><%= _bn?'দাতা ↓ / গ্রহীতা →':_ar?'متبرع ↓ / مستقبل →':'Donor ↓ / Recipient →' %></th>
+              <% GROUPS.forEach(function(g){ %><th><span class="badge bg-dark"><%= g %></span></th><% }) %>
+            </tr>
+          </thead>
+          <tbody>
+            <% GROUPS.forEach(function(from){ %>
+              <tr>
+                <td class="fw-bold"><span class="badge bg-danger"><%= from %></span></td>
+                <% GROUPS.forEach(function(to){ const ok = canGive(from, to); %>
+                  <td style="background:<%= ok ? 'rgba(22,163,74,.10)' : 'rgba(220,38,38,.06)' %>;">
+                    <i class="fas fa-<%= ok ? 'check text-success' : 'xmark text-danger' %>" style="opacity:.85;"></i>
+                  </td>
+                <% }) %>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-info border-0 rounded-4 mt-3 mb-0 small">
+        <i class="fas fa-lightbulb me-1 text-warning"></i>
+        <%= _bn
+          ? 'Rh ফ্যাক্টর গুরুত্বপূর্ণ — সন্তানধারিণী বয়সের কোনো নারীকে কখনো Rh-পজিটিভ লোহিত কণিকা দেবেন না; দিতে হলে Anti-D দিন।'
+          : _ar
+          ? 'عامل Rh مهم — لا تُعطَ كريات حمراء موجبة Rh لأي امرأة في سن الإنجاب؛ وإن لزم فأعطِ مضاد D.'
+          : 'The Rh factor matters — never give RhD-positive red cells to a woman of childbearing potential unless there is no alternative, and cover with Anti-D if you must.' %>
+      </div>
     </div>
   </div>
-  <div class="alert alert-info border-0 mt-3" style="border-radius:14px;">💡 Rh factor matters — always cross-match before transfusion.</div>
+
+  <!-- ---------- Full red-cell table ---------- -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:22px;">
+    <div class="card-body p-4">
+      <h2 class="h5 fw-bold mb-3"><i class="fas fa-droplet me-2 text-danger"></i><%= _bn?'লোহিত কণিকা (PRBC) সামঞ্জস্যতা':_ar?'توافق الكريات الحمراء':'Red-cell (packed RBC) compatibility' %></h2>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th><%= _bn?'গ্রুপ':_ar?'الفصيلة':'Group' %></th><th><%= _bn?'দান করা যায়':_ar?'يمكن التبرع لـ':'Can donate to' %></th><th><%= _bn?'গ্রহণ করা যায়':_ar?'يمكن الاستقبال من':'Can receive from' %></th><th><%= _bn?'ভূমিকা ও নোট':_ar?'الدور والملاحظات':'Role and notes' %></th></tr></thead>
+          <tbody>
+            <% _ref.rbc.forEach(function(r){ %>
+              <tr>
+                <td><span class="badge bg-danger" style="font-size:.82rem;"><%= r.group %></span></td>
+                <td class="small"><%= _esc(r.donatesTo) %></td>
+                <td class="small"><%= _esc(r.receivesFrom) %></td>
+                <td class="small">
+                  <div><strong><%= _esc(r.donorType) %></strong></div>
+                  <div class="text-muted"><%= _esc(r.recipientType) %></div>
+                  <div class="text-muted fst-italic"><%= _esc(r.note) %></div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <!-- Plasma -->
+    <div class="col-lg-6">
+      <div class="card h-100 border-0 shadow-sm" style="border-radius:22px;">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3"><i class="fas fa-flask me-2 text-danger"></i><%= _bn?'প্লাজমা সামঞ্জস্যতা (উল্টো নিয়ম)':_ar?'توافق البلازما (معكوس)':'Plasma compatibility — the mirror image' %></h2>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th><%= _bn?'দাতা':_ar?'المتبرع':'Donor' %></th><th><%= _bn?'সামঞ্জস্যপূর্ণ':_ar?'متوافق مع':'Compatible with' %></th><th><%= _bn?'ভূমিকা':_ar?'الدور':'Role' %></th></tr></thead>
+              <tbody>
+                <% _ref.plasma.forEach(function(p){ %>
+                  <tr><td class="fw-bold"><%= _esc(p.group) %></td><td class="small"><%= _esc(p.compatible) %></td><td class="small text-muted"><%= _esc(p.role) %></td></tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% _ref.plasma.forEach(function(p){ %>
+            <p class="small text-muted mt-2 mb-0" style="line-height:1.65;"><strong><%= _esc(p.group) %>:</strong> <%= _esc(p.note) %></p>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platelets -->
+    <div class="col-lg-6">
+      <div class="card h-100 border-0 shadow-sm" style="border-radius:22px;">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3"><i class="fas fa-circle-radiation me-2 text-danger"></i><%= _bn?'প্লেটলেট ট্রান্সফিউশন':_ar?'نقل الصفائح':'Platelet transfusion rules' %></h2>
+          <div class="d-grid gap-2">
+            <% _ref.platelets.forEach(function(p){ %>
+              <div class="p-3 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                <div class="fw-bold" style="font-size:.92rem;"><%= _esc(p.point) %></div>
+                <div class="small text-muted"><%= _esc(p.detail) %></div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Components ---------- -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:22px;">
+    <div class="card-body p-4">
+      <h2 class="h5 fw-bold mb-3"><i class="fas fa-boxes-stacked me-2 text-danger"></i><%= _bn?'রক্ত-উপাদান: সংরক্ষণ ও শেল্ফ-লাইফ':_ar?'مكونات الدم: التخزين والصلاحية':'Blood components: storage and shelf life' %></h2>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th><%= _bn?'উপাদান':_ar?'المكوّن':'Component' %></th><th><%= _bn?'সংরক্ষণ':_ar?'التخزين':'Storage' %></th><th><%= _bn?'শেল্ফ-লাইফ':_ar?'الصلاحية':'Shelf life' %></th><th><%= _bn?'ব্যবহার':_ar?'الاستخدام':'Used for' %></th></tr></thead>
+          <tbody>
+            <% _ref.components.forEach(function(c){ %>
+              <tr>
+                <td class="fw-bold"><%= _esc(c.component) %></td>
+                <td><span class="badge bg-light text-dark border"><%= _esc(c.storage) %></span></td>
+                <td class="small"><%= _esc(c.shelfLife) %></td>
+                <td class="small text-muted"><%= _esc(c.used) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Emergencies ---------- -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:22px; border-top:4px solid #dc2626 !important;">
+    <div class="card-body p-4">
+      <h2 class="h5 fw-bold mb-3"><i class="fas fa-truck-medical me-2 text-danger"></i><%= _bn?'জরুরি ট্রান্সফিউশনের নিয়ম':_ar?'قواعد النقل الطارئ':'Emergency transfusion rules' %></h2>
+      <div class="row g-3">
+        <% _ref.emergencies.forEach(function(e){ %>
+          <div class="col-md-6">
+            <div class="p-3 rounded-4 h-100" style="background:#fff0f0; border:1px solid #fecdd3;">
+              <div class="fw-bold mb-1" style="font-size:.95rem; color:#9f1239;"><%= _esc(e.rule) %></div>
+              <div class="small text-muted" style="line-height:1.65;"><%= _esc(e.action) %></div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Facts + CTA ---------- -->
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card h-100 border-0 shadow-sm" style="border-radius:22px;">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i><%= _bn?'জানেন কি':_ar?'هل تعلم':'Did you know' %></h2>
+          <ul class="mb-0 ps-3 d-grid gap-2 small" style="line-height:1.7;">
+            <% _ref.facts.forEach(function(f){ %><li><%= _esc(f) %></li><% }) %>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card h-100 border-0 shadow-sm" style="border-radius:22px; background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-2" style="color:#fff;"><%= _bn?'সাহায্য করতে চান?':_ar?'تريد المساعدة؟':'Want to help?' %></h2>
+          <p class="small mb-3" style="color:#cbd5e1; line-height:1.7;">
+            <%= _bn
+              ? 'O− লোহিত কণিকা আর AB প্লাজমা — বাংলাদেশের সবচেয়ে দুর্লভ দুটি উপাদান। নিয়মিত দাতা হিসেবে নিবন্ধন করুন।'
+              : _ar
+              ? 'كريات O− وبلازما AB — أندر مكونين في بنغلاديش. سجّل كمتبرع منتظم.'
+              : 'O− red cells and AB plasma are the two scarcest products in Bangladesh. Register as a regular donor and keep your availability switched on.' %>
+          </p>
+          <div class="d-grid gap-2">
+            <a href="/donors" class="btn btn-danger"><i class="fas fa-users me-1"></i><%= _t('nav_donors') %></a>
+            <a href="/request-blood" class="btn btn-outline-light" style="border-color:rgba(255,255,255,.35);"><i class="fas fa-plus-circle me-1"></i><%= _t('nav_request') %></a>
+            <a href="/antid" class="btn btn-outline-light" style="border-color:rgba(255,255,255,.35);"><i class="fas fa-syringe me-1"></i><%= _t('nav_antid') %></a>
+            <a href="/resources" class="btn btn-outline-light" style="border-color:rgba(255,255,255,.35);"><i class="fas fa-graduation-cap me-1"></i><%= _t('nav_education') %></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } else { %>
+    <div class="alert alert-danger border-0 rounded-4"><%= lang==='bn'?'সামঞ্জস্যতার ডেটা লোড করা যায়নি।':'Compatibility data could not be loaded.' %></div>
+  <% } %>
 </div>
+
 <%- include('partials/footer') %>

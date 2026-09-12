@@ -100,3 +100,38 @@ export function buildFormData(fields = {}, file = null, fileField = "file") {
   }
   return fd;
 }
+
+// ---------- Server-Sent Events proxy ----------
+/**
+ * Pipe a backend SSE stream straight to the browser. The browser only ever
+ * talks to this frontend (same origin), so the backend URL stays server-side.
+ * Falls back to a 502 that the client can detect and switch to polling.
+ */
+export async function proxyEventStream(req, res, backendPath) {
+  let upstream;
+  try {
+    upstream = await fetch(BACKEND_URL + backendPath, { headers: { Accept: "text/event-stream" } });
+  } catch (e) {
+    if (!res.headersSent) res.status(502).end();
+    return;
+  }
+  if (!upstream.ok || !upstream.body) {
+    if (!res.headersSent) res.status(upstream.status || 502).end();
+    return;
+  }
+  res.set({
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders?.();
+
+  const { Readable } = await import("stream");
+  const nodeStream = Readable.fromWeb(upstream.body);
+  const close = () => { try { nodeStream.destroy(); } catch (e) { /* already closed */ } };
+  req.on("close", close);
+  req.on("aborted", close);
+  nodeStream.on("error", () => { try { res.end(); } catch (e) { /* ignore */ } });
+  nodeStream.pipe(res);
+}

@@ -1,7 +1,11 @@
 // ==================== Frontend Routes - Admin Panel (API-backed) ====================
 import express from "express";
-import { apiGet, apiPost, apiDel } from "../api.js";
+import multer from "multer";
+import { apiGet, apiPost, apiPut, apiDel, apiPostForm, buildFormData } from "../api.js";
 import { requireAdmin, invalidateUserCache } from "../middleware/auth.js";
+import { invalidateBranding } from "../middleware/site.js";
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 const router = express.Router();
 
@@ -189,6 +193,178 @@ router.get("/backup-database", requireAdmin, async (req, res) => {
     req.session.flash = { type: "danger", message: "❌ Backup failed." };
   }
   res.redirect("/admin");
+});
+
+// ============================================================================
+//  Branding & Identity  (/admin/branding)
+// ============================================================================
+router.get("/branding", requireAdmin, async (req, res) => {
+  let settings = res.locals.branding;
+  try { settings = (await apiGet("/api/admin/branding", req.session.token)).settings; } catch (e) { /* fall back */ }
+  res.render("admin/branding", { title: "Branding & Identity - Admin", settings });
+});
+
+router.post("/branding", requireAdmin, upload.fields([{ name: "logo", maxCount: 1 }, { name: "favicon", maxCount: 1 }]), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const fd = new FormData();
+    for (const k of ["site_name", "site_tagline", "site_description", "brand_primary", "brand_accent", "brand_font_style"]) {
+      if (b[k] !== undefined) fd.append(k, String(b[k]));
+    }
+    for (const [field, label] of [["logo", "logo"], ["favicon", "favicon"]]) {
+      const f = req.files?.[field]?.[0];
+      if (f) fd.append(label, new Blob([f.buffer], { type: f.mimetype }), f.originalname);
+    }
+    const d = await apiPostForm("/api/admin/branding", fd, req.session.token);
+    invalidateBranding();
+    flashFrom(req, d, "\u2705 Branding saved.");
+  } catch (e) {
+    req.session.flash = { type: "danger", message: e.message || "\u274c Failed to save branding." };
+  }
+  res.redirect("/admin/branding");
+});
+
+// ============================================================================
+//  SMTP & Email  (/admin/smtp)
+// ============================================================================
+router.get("/smtp", requireAdmin, async (req, res) => {
+  let settings = {}, logs = [];
+  try { settings = (await apiGet("/api/admin/smtp", req.session.token)).settings; } catch (e) { /* empty */ }
+  try { logs = (await apiGet("/api/admin/smtp/log", req.session.token)).logs || []; } catch (e) { /* empty */ }
+  res.render("admin/smtp", { title: "SMTP & Email - Admin", settings, logs });
+});
+
+router.post("/smtp", requireAdmin, async (req, res) => {
+  try {
+    const d = await apiPost("/api/admin/smtp", req.body, req.session.token);
+    flashFrom(req, d, "\u2705 SMTP settings saved.");
+  } catch (e) {
+    req.session.flash = { type: "danger", message: e.message || "\u274c Failed to save SMTP settings." };
+  }
+  res.redirect("/admin/smtp");
+});
+
+router.post("/smtp/test", requireAdmin, async (req, res) => {
+  try {
+    const d = await apiPost("/api/admin/smtp/test", { to: req.body.to }, req.session.token);
+    req.session.flash = { type: d.sent ? "success" : "danger", message: d.message };
+  } catch (e) {
+    req.session.flash = { type: "danger", message: e.message || "\u274c Test failed." };
+  }
+  res.redirect("/admin/smtp");
+});
+
+// ============================================================================
+//  AI Assistant  (/admin/ai)  — configuration is saved via /ai-help/admin/config
+// ============================================================================
+router.get("/ai", requireAdmin, async (req, res) => {
+  let settings = {}, models = [], conversations = [], knowledge = null, defaultModel = "qwen/qwen3.6-27b";
+  try {
+    const d = await apiGet("/api/ai/admin/config", req.session.token);
+    settings = d.settings || {}; models = d.models || []; defaultModel = d.default_model || defaultModel;
+  } catch (e) { /* empty */ }
+  try { conversations = (await apiGet("/api/ai/admin/conversations", req.session.token)).conversations || []; } catch (e) { /* empty */ }
+  try { knowledge = await apiGet("/api/ai/admin/knowledge", req.session.token); } catch (e) { /* optional */ }
+  res.render("admin/ai", { title: "AI Assistant - Admin", settings, models, conversations, knowledge, defaultModel });
+});
+
+// ============================================================================
+//  Content Manager  (/admin/content)  — Anti-D entries + educational resources
+// ============================================================================
+router.get("/content", requireAdmin, async (req, res) => {
+  let antid = [], resources = [], reference = null;
+  try { const d = await apiGet("/api/admin/content/antid", req.session.token); antid = d.entries || []; reference = d.reference; } catch (e) { /* empty */ }
+  try { resources = (await apiGet("/api/admin/content/resources", req.session.token)).resources || []; } catch (e) { /* empty */ }
+  res.render("admin/content", { title: "Content Manager - Admin", antid, resources, reference });
+});
+
+router.post("/content/antid", requireAdmin, async (req, res) => {
+  try {
+    const d = await apiPost("/api/admin/content/antid", req.body, req.session.token);
+    flashFrom(req, d);
+  } catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/content");
+});
+
+router.post("/content/antid/:id/delete", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiDel(`/api/admin/content/antid/${req.params.id}`, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/content");
+});
+
+router.post("/content/resources", requireAdmin, async (req, res) => {
+  try {
+    const d = await apiPost("/api/admin/content/resources", req.body, req.session.token);
+    flashFrom(req, d);
+  } catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/content");
+});
+
+router.post("/content/resources/:id/delete", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiDel(`/api/admin/content/resources/${req.params.id}`, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/content");
+});
+
+// ============================================================================
+//  Review Moderation  (/admin/reviews)
+// ============================================================================
+router.get("/reviews", requireAdmin, async (req, res) => {
+  let reviews = [], counts = { pending: 0, approved: 0, rejected: 0 };
+  try {
+    const d = await apiGet("/api/reviews/admin", req.session.token, { status: req.query.status });
+    reviews = d.reviews || []; counts = d.counts || counts;
+  } catch (e) { /* empty */ }
+  res.render("admin/reviews", { title: "Review Moderation - Admin", reviews, counts, filter: req.query.status });
+});
+
+router.post("/reviews/:id/status", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiPost(`/api/reviews/admin/${req.params.id}/status`, { status: req.body.status }, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/reviews");
+});
+
+router.post("/reviews/:id/feature", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiPost(`/api/reviews/admin/${req.params.id}/feature`, {}, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/reviews");
+});
+
+router.post("/reviews/:id/reply", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiPost(`/api/reviews/admin/${req.params.id}/reply`, { admin_reply: req.body.admin_reply }, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/reviews");
+});
+
+router.post("/reviews/:id/delete", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiDel(`/api/reviews/admin/${req.params.id}`, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/reviews");
+});
+
+// ============================================================================
+//  Live Chat Inbox  (/admin/live-chat)
+// ============================================================================
+router.get("/live-chat", requireAdmin, async (req, res) => {
+  let sessions = [], unread = 0;
+  try {
+    const d = await apiGet("/api/support/admin/sessions", req.session.token);
+    sessions = d.sessions || []; unread = d.unread_total || 0;
+  } catch (e) { /* empty */ }
+  res.render("admin/live_chat", { title: "Live Chat Inbox - Admin", sessions, unread });
+});
+
+// Live Activity feed admin view + announcement
+router.get("/activity", requireAdmin, async (req, res) => {
+  let events = [];
+  try { events = (await apiGet("/api/admin/activity", req.session.token)).events || []; } catch (e) { /* empty */ }
+  res.render("admin/activity", { title: "Live Activity - Admin", events });
+});
+
+router.post("/activity/announce", requireAdmin, async (req, res) => {
+  try { flashFrom(req, await apiPost("/api/admin/activity/announce", req.body, req.session.token)); }
+  catch (e) { req.session.flash = { type: "danger", message: e.message || "\u274c Failed." }; }
+  res.redirect("/admin/activity");
 });
 
 export default router;

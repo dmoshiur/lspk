@@ -1,9 +1,10 @@
 <%- include('partials/header') %>
 <%- include('errors/error', {
-  errCode: 500,
-  errIcon: 'fa-triangle-exclamation',
-  errTitle: t('err_500_title'),
-  errBody: t('err_500_body'),
+  errCode: 400,
+  errIcon: 'fa-file-circle-question',
+  errTitle: t('err_400_title'),
+  errBody: t('err_400_body'),
+  errHint: (typeof hint !== 'undefined' && hint) ? hint : '',
   errDetail: (typeof detail !== 'undefined' && detail) ? detail : '',
   errRequest: (typeof requestPath !== 'undefined') ? requestPath : ''
 }) %>

@@ -1,0 +1,54 @@
+<%
+  // Shared admin sidebar. Locals: `active` (string), `stats` (optional).
+  const _active = (typeof active !== 'undefined') ? active : '';
+  const _st = (typeof stats !== 'undefined' && stats) ? stats : {};
+  const _p  = (typeof currentPath !== 'undefined') ? currentPath : '';
+  const link = (key, href, icon, label, badge, badgeClass) => {
+    const on = _active === key || (_active === '' && href === '/admin') ? ' active' : '';
+    return `<a class="${on}" href="${href}"><i class="fas ${icon}"></i><span>${label}</span>` +
+      (badge ? `<span class="badge ${badgeClass || 'bg-danger'} ms-auto">${badge}</span>` : '') + `</a>`;
+  };
+%>
+<style>
+  .admin-wrapper{ display:flex; min-height:70vh; gap:1.5rem; }
+  .sidebar{ width:264px; flex-shrink:0; background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#fff; border-radius:20px; padding:18px; position:sticky; top:88px; height:fit-content; }
+  .sidebar a{ color:#cbd5e1; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:12px; font-weight:600; font-size:.88rem; transition:all .18s; }
+  .sidebar a:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .sidebar a.active{ background:linear-gradient(135deg,var(--primary),var(--accent)); box-shadow:0 8px 20px rgba(227,27,35,.3); color:#fff; }
+  .sidebar .side-label{ font-size:.66rem; text-transform:uppercase; letter-spacing:.16em; color:#64748b; padding:12px 13px 4px; font-weight:700; }
+  @media(max-width:991px){ .sidebar{ width:100%; position:static; } .admin-wrapper{ flex-direction:column; } }
+</style>
+<aside class="sidebar">
+  <div class="text-center py-2">
+    <div class="fw-bold" style="font-family:var(--font-display); font-size:1.15rem;"><i class="fas fa-tint text-danger me-2"></i><%= (typeof siteName!=='undefined')?siteName:'BloodOra' %> Admin</div>
+    <small style="color:#94a3b8;"><%= (typeof currentUser!=='undefined'&&currentUser)?currentUser.name:'' %></small>
+  </div>
+  <hr style="border-color:rgba(255,255,255,.08);">
+  <nav class="d-grid gap-1">
+    <div class="side-label">Overview</div>
+    <%- link('dashboard', '/admin', 'fa-gauge', 'Dashboard', _st.pending_orders, 'bg-warning text-dark') %>
+    <%- link('activity', '/admin/activity', 'fa-broadcast-tower', 'Live Activity') %>
+
+    <div class="side-label">Shop</div>
+    <%- link('products', '/shop/admin/products', 'fa-box', 'Products', _st.total_products, 'bg-secondary') %>
+    <%- link('orders', '/shop/admin/orders', 'fa-cart-shopping', 'Orders', _st.pending_orders, 'bg-warning text-dark') %>
+
+    <div class="side-label">Community</div>
+    <%- link('reviews', '/admin/reviews', 'fa-star', 'Reviews') %>
+    <%- link('livechat', '/admin/live-chat', 'fa-comments', 'Live Chat') %>
+    <%- link('messages', '/messages/admin/messages', 'fa-envelope', 'Messages', _st.unread_messages, 'bg-danger') %>
+    <%- link('requests', '/blood-requests', 'fa-tint', 'Blood Requests', _st.urgent_requests, 'bg-danger') %>
+
+    <div class="side-label">Site</div>
+    <%- link('content', '/admin/content', 'fa-newspaper', 'Content Manager') %>
+    <%- link('branding', '/admin/branding', 'fa-palette', 'Branding & Logo') %>
+    <%- link('smtp', '/admin/smtp', 'fa-envelope-open-text', 'SMTP & Email') %>
+    <%- link('ai', '/admin/ai', 'fa-robot', 'AI Assistant') %>
+    <%- link('settings', '/admin/settings', 'fa-gear', 'Site Settings') %>
+  </nav>
+  <hr style="border-color:rgba(255,255,255,.08);">
+  <div class="d-grid gap-2">
+    <a href="/" class="btn btn-light btn-sm rounded-pill" style="justify-content:center;"><i class="fas fa-home me-2"></i>Back to Site</a>
+    <a href="/admin/backup-database" class="btn btn-outline-light btn-sm rounded-pill" style="justify-content:center; border-color:rgba(255,255,255,.2); color:#fff;"><i class="fas fa-download me-2"></i>Backup DB</a>
+  </div>
+</aside>
