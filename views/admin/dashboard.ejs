@@ -1,0 +1,203 @@
+<%- include('../partials/header') %>
+<style>
+  .admin-wrapper{ display:flex; min-height:70vh; }
+  .sidebar{ width:260px; background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#fff; border-radius:18px; padding:18px; position:sticky; top:88px; height:fit-content; }
+  .sidebar a{ color:#cbd5e1; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; font-weight:600; font-size:.9rem; transition:all .2s; }
+  .sidebar a:hover, .sidebar a.active{ background:rgba(255,255,255,.08); color:#fff; }
+  .sidebar a.active{ background:linear-gradient(135deg,var(--primary),#ff3340); box-shadow:0 8px 20px rgba(227,27,35,.3); }
+  .stat-card{ background:#fff; border-radius:18px; padding:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(15,23,42,.06); display:flex; align-items:center; gap:14px; }
+  .stat-icon{ width:48px;height:48px;border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; }
+  @media(max-width:991px){ .sidebar{ width:100%; position:static; } .admin-wrapper{flex-direction:column;} }
+</style>
+
+<div class="container mt-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="fw-bold mb-0" style="letter-spacing:-.02em;"><i class="fas fa-cog text-danger me-2"></i>Admin Dashboard</h2>
+      <small class="text-muted">Turso serverless • Ultra control center — same BloodOra power, polished.</small>
+    </div>
+    <span class="badge bg-dark rounded-pill"><i class="fas fa-shield-halved me-1"></i><%= currentUser.is_super_admin?'Super Admin':'Admin' %></span>
+  </div>
+
+  <div class="admin-wrapper gap-4">
+    <aside class="sidebar">
+      <div class="text-center py-2">
+        <div class="fw-bold" style="letter-spacing:-.02em;"><i class="fas fa-tint text-danger me-2"></i>BloodOra Admin</div>
+        <small style="color:#94a3b8;"><%= currentUser.name %></small>
+      </div>
+      <hr style="border-color:rgba(255,255,255,.08);">
+      <nav class="d-grid gap-1">
+        <a class="active" href="/admin"><i class="fas fa-gauge"></i> Overview</a>
+        <a href="/shop/admin/products"><i class="fas fa-box"></i> Products</a>
+        <a href="/shop/admin/orders"><i class="fas fa-cart-shopping"></i> Orders <% if(stats.pending_orders){ %><span class="badge bg-warning text-dark ms-auto"><%= stats.pending_orders %></span><% } %></a>
+        <a href="/messages/admin/messages"><i class="fas fa-envelope"></i> Messages <% if(stats.unread_messages){ %><span class="badge bg-danger ms-auto"><%= stats.unread_messages %></span><% } %></a>
+        <a href="/admin/settings"><i class="fas fa-gear"></i> Settings</a>
+        <a href="/blood-requests"><i class="fas fa-tint"></i> Blood Requests <% if(stats.urgent_requests){ %><span class="badge bg-danger ms-auto"><%= stats.urgent_requests %></span><% } %></a>
+      </nav>
+      <hr style="border-color:rgba(255,255,255,.08);">
+      <div class="d-grid gap-2">
+        <a href="/" class="btn btn-light btn-sm rounded-pill" style="justify-content:center;"><i class="fas fa-home me-2"></i>Back to Site</a>
+        <a href="/admin/backup-database" class="btn btn-outline-light btn-sm rounded-pill" style="justify-content:center; border-color:rgba(255,255,255,.2); color:#fff;"><i class="fas fa-download me-2"></i>Backup DB</a>
+      </div>
+    </aside>
+
+    <main class="flex-grow-1" style="min-width:0;">
+      <!-- Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,var(--primary),#ff3340);"><i class="fas fa-users"></i></div><div><div class="h5 fw-bold mb-0"><%= stats.total_users %></div><div class="small text-muted">Total Users</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#16a34a,#22c55e);"><i class="fas fa-hand-holding-heart"></i></div><div><div class="h5 fw-bold mb-0"><%= stats.total_donors %></div><div class="small text-muted">Verified Donors</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);"><i class="fas fa-shopping-bag"></i></div><div><div class="h5 fw-bold mb-0"><%= stats.total_orders %></div><div class="small text-muted">Orders • <%= stats.pending_orders %> pending</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);"><i class="fas fa-box"></i></div><div><div class="h5 fw-bold mb-0"><%= stats.total_products %></div><div class="small text-muted">Products</div></div></div></div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm" style="border-radius:18px;">
+            <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0"><i class="fas fa-bullhorn me-2 text-danger"></i>Site Notice</h6></div>
+            <div class="card-body">
+              <form method="POST" action="/admin/notice" class="d-grid gap-2">
+                <textarea name="notice_content" class="form-control" rows="2" placeholder="Broadcast notice to homepage..."><%= current_notice %></textarea>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-danger btn-sm rounded-pill">Update Notice</button>
+                  <a href="/admin/notice/clear" class="btn btn-light btn-sm border rounded-pill">Clear</a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <% if(currentUser.is_super_admin){ %>
+            <div class="card border-0 shadow-sm mt-3" style="border-radius:18px;">
+              <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0"><i class="fas fa-user-shield me-2 text-danger"></i>Create Admin</h6></div>
+              <div class="card-body">
+                <form method="POST" action="/admin/create-admin" class="row g-2">
+                  <div class="col-md-6"><input name="name" class="form-control" placeholder="Name" required></div>
+                  <div class="col-md-6"><input name="phone" class="form-control" placeholder="Phone" required></div>
+                  <div class="col-md-6"><input name="email" type="email" class="form-control" placeholder="Email" required></div>
+                  <div class="col-md-6"><input name="password" type="password" class="form-control" placeholder="Password (min 6)" required></div>
+                  <div class="col-12"><button class="btn btn-dark w-100 rounded-pill">Create Admin</button></div>
+                </form>
+              </div>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm" style="border-radius:18px;">
+            <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h6></div>
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-6"><a href="/shop/admin/product/add" class="btn btn-outline-danger w-100 rounded-4 py-3"><i class="fas fa-plus d-block mb-1"></i>Add Product</a></div>
+                <div class="col-6"><a href="/shop/admin/products" class="btn btn-outline-dark w-100 rounded-4 py-3"><i class="fas fa-box d-block mb-1"></i>Manage Products</a></div>
+                <div class="col-6"><a href="/shop/admin/orders" class="btn btn-outline-danger w-100 rounded-4 py-3"><i class="fas fa-receipt d-block mb-1"></i>View Orders</a></div>
+                <div class="col-6"><a href="/messages/admin/messages" class="btn btn-outline-dark w-100 rounded-4 py-3"><i class="fas fa-envelope d-block mb-1"></i>Messages</a></div>
+                <div class="col-6"><a href="/admin/settings" class="btn btn-light border w-100 rounded-4 py-3"><i class="fas fa-gear d-block mb-1"></i>Settings</a></div>
+                <div class="col-6"><a href="/donors" class="btn btn-light border w-100 rounded-4 py-3"><i class="fas fa-users d-block mb-1"></i>Donors</a></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card border-0 shadow-sm mt-3" style="border-radius:18px;">
+            <div class="card-body d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-bold">Pending Verifications</div>
+                <div class="h4 fw-bold mb-0" style="color:var(--primary);"><%= stats.pending_verifications %></div>
+              </div>
+              <a href="#users" class="btn btn-danger btn-sm rounded-pill">Review ↓</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card border-0 shadow-sm mt-4" style="border-radius:18px;" id="users">
+        <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0"><i class="fas fa-users me-2 text-danger"></i>All Users (<%= stats.total_users %>)</h6>
+          <input type="text" id="userSearch" class="form-control form-control-sm" placeholder="Search name/email/blood..." style="max-width:260px; border-radius:999px;">
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0" id="usersTable">
+              <thead><tr><th>User</th><th>Blood</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <% all_users.forEach(u=>{ %>
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <% if(u.image_file && u.image_file!=='default.jpg'){ %><img src="/uploads/<%= u.image_file %>" style="width:38px;height:38px;border-radius:50%;object-fit:cover;"><% } else { %><img src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(u.name) %>&background=random&size=64" style="width:38px;height:38px;border-radius:50%;"><% } %>
+                        <div>
+                          <div class="fw-bold" style="font-size:.9rem;"><%= u.name %> <% if(u.is_super_admin){ %><span class="badge bg-dark rounded-pill">Super</span><% } else if(u.is_admin){ %><span class="badge bg-primary rounded-pill">Admin</span><% } %></div>
+                          <div class="small text-muted"><%= u.email %> • <%= u.phone %></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge bg-danger rounded-pill"><%= u.blood_group||'—' %></span><div class="small text-muted"><%= u.role||'Both' %></div></td>
+                    <td class="small"><%= [u.district, u.upazila].filter(Boolean).join(', ')||'—' %><div class="text-muted"><%= u.division||'' %></div></td>
+                    <td>
+                      <% if(u.is_verified){ %><span class="badge bg-success rounded-pill">Verified</span><% } else { %><span class="badge bg-warning text-dark rounded-pill">Unverified</span><% } %>
+                      <div class="small"><% if(u.can_donate){ %><span class="badge bg-light text-success border">Can Donate</span><% } else { %><span class="badge bg-light text-secondary border">Unavailable</span><% } %></div>
+                    </td>
+                    <td>
+                      <div class="d-flex flex-wrap gap-1">
+                        <% if(!u.is_verified && u.age>=18){ %><form method="POST" action="/admin/verify-donor/<%= u.id %>"><button class="btn btn-sm btn-success rounded-pill" title="Verify"><i class="fas fa-check"></i></button></form><% } %>
+                        <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="openEdit(<%= u.id %>)"><i class="fas fa-edit"></i></button>
+                        <% if(currentUser.is_super_admin && !u.is_super_admin && u.id!==currentUser.id){ %>
+                          <% if(!u.is_admin){ %><a href="/admin/promote/<%= u.id %>" class="btn btn-sm btn-primary rounded-pill"><i class="fas fa-arrow-up"></i></a><% } else { %><a href="/admin/demote/<%= u.id %>" class="btn btn-sm btn-warning rounded-pill"><i class="fas fa-arrow-down"></i></a><% } %>
+                          <form method="POST" action="/admin/impersonate/<%= u.id %>" class="d-inline"><button class="btn btn-sm btn-dark rounded-pill"><i class="fas fa-mask"></i></button></form>
+                          <a href="/admin/delete/<%= u.id %>" class="btn btn-sm btn-danger rounded-pill" onclick="return confirm('Delete <%= u.name %>?')"><i class="fas fa-trash"></i></a>
+                        <% } %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:18px;">
+      <form id="editForm" method="POST">
+        <div class="modal-header" style="background:linear-gradient(135deg,var(--primary),#ff3340); color:#fff; border-radius:18px 18px 0 0;"><h5 class="modal-title fw-bold">Edit User</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body row g-2">
+          <div class="col-12"><label class="form-label">Name</label><input name="name" id="e_name" class="form-control" required></div>
+          <div class="col-md-6"><label class="form-label">Email</label><input name="email" id="e_email" class="form-control" required></div>
+          <div class="col-md-6"><label class="form-label">Phone</label><input name="phone" id="e_phone" class="form-control" required></div>
+          <div class="col-md-4"><label class="form-label">Blood</label><select name="blood_group" id="e_blood" class="form-select"><% ["A+","A-","B+","B-","O+","O-","AB+","AB-"].forEach(bg=>{ %><option><%= bg %></option><% }) %></select></div>
+          <div class="col-md-4"><label class="form-label">District</label><input name="district" id="e_district" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Upazila</label><input name="upazila" id="e_upazila" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Holding</label><input name="address_holding" id="e_holding" class="form-control"></div>
+          <div class="col-12"><label class="form-label">New Password (leave blank = keep)</label><input name="new_password" type="password" class="form-control" placeholder="Min 6 chars"></div>
+          <div class="col-4"><div class="form-check"><input type="checkbox" name="is_verified" id="e_verified" class="form-check-input"><label class="form-check-label" for="e_verified">Verified</label></div></div>
+          <div class="col-4"><div class="form-check"><input type="checkbox" name="is_admin" id="e_admin" class="form-check-input"><label class="form-check-label" for="e_admin">Admin</label></div></div>
+          <div class="col-4"><div class="form-check"><input type="checkbox" name="can_donate" id="e_can" class="form-check-input"><label class="form-check-label" for="e_can">Can Donate</label></div></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light border rounded-pill" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger rounded-pill">Save Changes</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const search=document.getElementById('userSearch');
+  search?.addEventListener('input', ()=>{
+    const q=search.value.toLowerCase();
+    document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{ tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  });
+  async function openEdit(id){
+    const res=await fetch(`/admin/user/details/${id}`);
+    const u=await res.json();
+    document.getElementById('e_name').value=u.name; document.getElementById('e_email').value=u.email; document.getElementById('e_phone').value=u.phone;
+    document.getElementById('e_blood').value=u.blood_group||'O+'; document.getElementById('e_district').value=u.district||''; document.getElementById('e_upazila').value=u.upazila||''; document.getElementById('e_holding').value=u.address_holding||'';
+    document.getElementById('e_verified').checked=!!u.is_verified; document.getElementById('e_admin').checked=!!u.is_admin; document.getElementById('e_can').checked=!!u.can_donate;
+    document.getElementById('editForm').action=`/admin/user/update/${id}`;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,37 @@
+<%- include('../partials/header') %>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="fas fa-box text-danger me-2"></i>Manage Products</h2>
+    <a href="/shop/admin/product/add" class="btn btn-danger rounded-pill"><i class="fas fa-plus me-2"></i>Add New Product</a>
+  </div>
+  <% if (products && products.length){ %>
+    <div class="card border-0 shadow-sm" style="border-radius:18px;">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% products.forEach(p=>{ %>
+              <tr>
+                <td><img src="/uploads/<%= p.image_file %>" alt="<%= p.name %>" class="rounded-3" style="width:56px;height:56px;object-fit:cover; border:1px solid #e2e8f0;" onerror="this.src='https://via.placeholder.com/56'"></td>
+                <td class="fw-bold" style="font-size:.9rem;"><%= p.name %></td>
+                <td><span class="badge bg-light text-dark border rounded-pill"><%= p.category||'—' %></span></td>
+                <td class="fw-bold" style="color:var(--primary);">৳<%= p.price %></td>
+                <td><% if(p.stock>10){ %><span class="badge bg-success rounded-pill"><%= p.stock %></span><% } else if(p.stock>0){ %><span class="badge bg-warning text-dark rounded-pill"><%= p.stock %></span><% } else { %><span class="badge bg-danger rounded-pill">Out of Stock</span><% } %></td>
+                <td><% if(p.is_available){ %><span class="badge bg-success rounded-pill">Available</span><% } else { %><span class="badge bg-secondary rounded-pill">Unavailable</span><% } %></td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <a href="/shop/admin/product/edit/<%= p.id %>" class="btn btn-sm btn-warning rounded-pill"><i class="fas fa-edit"></i></a>
+                    <form method="POST" action="/shop/admin/product/delete/<%= p.id %>" onsubmit="return confirm('Delete <%= p.name %>?')"><button class="btn btn-sm btn-danger rounded-pill"><i class="fas fa-trash"></i></button></form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;"><i class="fas fa-box-open fa-3x mb-3" style="color:#94a3b8;"></i><h5>No products yet</h5><a href="/shop/admin/product/add" class="btn btn-danger rounded-pill mt-2">Add Product</a></div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>
