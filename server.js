@@ -1,5 +1,8 @@
-// ==================== BloodOra - Node.js + Turso Serverless ====================
-// Ultra modern, bug-free, fully workable shop & blood donation platform
+// ==================== BloodOra - FRONTEND (presentation layer) ====================
+// This is the frontend half of the split deployment. It keeps NO database.
+// All data comes from the separated Backend API, whose URL is configured via
+// the BACKEND_URL environment variable (set on Vercel for this project).
+// The backend sets the matching FRONTEND_URL variable for CORS.
 import express from "express";
 import session from "express-session";
 import path from "path";
@@ -7,11 +10,9 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import helmet from "helmet";
-import { createServer } from "http";
-import { Server as SocketIO } from "socket.io";
 
-import { initDB } from "./src/db.js";
-import { loadUser, getClientIp, getDeviceFingerprint } from "./src/middleware/auth.js";
+import { loadUser } from "./src/middleware/auth.js";
+import { BACKEND_URL } from "./src/api.js";
 
 import authRoutes from "./src/routes/auth.js";
 import pageRoutes from "./src/routes/pages.js";
@@ -25,8 +26,6 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-const httpServer = createServer(app);
-const io = new SocketIO(httpServer, { cors: { origin: "*" } });
 
 const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === "production";
@@ -43,9 +42,8 @@ app.use(morgan(isProd ? "combined" : "dev"));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ---------- Session (Memory for dev, Turso-ready) ----------
+// ---------- Session ----------
 app.use(session({
   secret: process.env.SESSION_SECRET || "blood-donation-secret-key-2026",
   resave: false,
@@ -54,14 +52,14 @@ app.use(session({
     httpOnly: true,
     secure: isProd,
     sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  }
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  },
 }));
 
-// ---------- Global locals & auth loader ----------
-app.use(async (req, res, next) => {
-  // Make session available in views (for impersonating check)
+// ---------- Global locals ----------
+app.use((req, res, next) => {
   res.locals.session = req.session;
+  res.locals.backendUrl = BACKEND_URL; // available to views if ever needed
   // Cart count for navbar
   const cart = req.session.cart || {};
   res.locals.sessionCartCount = Object.keys(cart).length;
@@ -75,36 +73,38 @@ app.use(async (req, res, next) => {
   }
   next();
 });
+
+// Load current user from the backend API (JWT kept in session)
 app.use(loadUser);
 
-// Also expose settings for footer (optional global)
-app.use(async (req, res, next) => {
-  // Lazy load settings only for footer if needed - we can fetch once and cache
-  // For simplicity, let each page pass settings; footer will fallback
-  next();
-});
-
-// ---------- Socket.IO (live chat) ----------
-io.on("connection", (socket) => {
-  // console.log("socket connected:", socket.id);
-  socket.on("join", (room) => socket.join(room));
-  socket.on("chat:message", (data) => {
-    io.emit("chat:message", data);
-  });
-  socket.on("disconnect", () => {});
+// ---------- Uploaded images: proxy to the backend ----------
+// Views reference /uploads/<file>; the files live on the backend host.
+app.get("/uploads/:file", async (req, res) => {
+  try {
+    const r = await fetch(`${BACKEND_URL}/uploads/${encodeURIComponent(req.params.file)}`);
+    if (!r.ok) return res.status(r.status).send("Not found");
+    res.set("Content-Type", r.headers.get("content-type") || "application/octet-stream");
+    res.set("Cache-Control", "public, max-age=3600");
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.send(buf);
+  } catch (e) {
+    console.error("Upload proxy error:", e.message);
+    res.status(502).send("Upload proxy error");
+  }
 });
 
 // ---------- Routes ----------
 app.use("/", pageRoutes);
 app.use("/", authRoutes);
 app.use("/donors", donorRoutes);
-app.use("/", bloodRoutes); // includes /request-blood, /blood-requests, /blood-request/:id etc, /urgent
+app.use("/", bloodRoutes); // /request-blood, /blood-requests, /blood-request/:id, /urgent
 app.use("/shop", shopRoutes);
 app.use("/admin", adminRoutes);
 app.use("/messages", messageRoutes);
 
-// Aliases for compatibility with Flask url_for names (old Python routes → new Node routes)
+// Aliases for compatibility with old URL names
 app.get("/profile/switch-back", (req, res) => res.redirect("/admin/profile/switch-back"));
+app.get("/my-orders", (req, res) => res.redirect("/shop/my-orders"));
 app.get("/my_orders", (req, res) => res.redirect("/shop/my-orders"));
 // Old Flask shop admin paths → new shop admin
 app.get("/admin/shop/products", (req, res) => res.redirect("/shop/admin/products"));
@@ -126,8 +126,6 @@ app.post("/apply-for-verification", (req, res) => res.redirect(307, "/donors/app
 app.get("/admin/messages", (req, res) => res.redirect("/messages/admin/messages"));
 app.get("/admin/message/reply/:id", (req, res) => res.redirect(`/messages/admin/message/reply/${req.params.id}`));
 
-// Health check also at /health (already in pageRoutes)
-
 // ---------- 404 & Error ----------
 app.use((req, res) => {
   res.status(404).render("404", { title: "404 - Not Found" });
@@ -137,14 +135,9 @@ app.use((err, req, res, next) => {
   res.status(500).render("500", { title: "500 - Server Error" });
 });
 
-// ---------- Init DB & Start ----------
-await initDB();
-console.log("✅ BloodOra DB ready — Turso serverless or local file");
-
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🩸 BloodOra v2.0 — Node.js + Turso Serverless`);
-  console.log(`   Theme: SAME as original, Ultra resolution, no removal`);
-  console.log(`   Shop: FULLY WORKABLE (cart, Kalai ৳10, invoice, payment save)`);
+// ---------- Start ----------
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`\n🩸 BloodOra v3.0 — FRONTEND (presentation layer)`);
   console.log(`   URL: http://0.0.0.0:${PORT}`);
-  console.log(`   Env: ${isProd ? "production" : "development"} | Turso: ${process.env.TURSO_DATABASE_URL ? "ENABLED ☁️" : "local file 💾"}\n`);
+  console.log(`   Backend API: ${BACKEND_URL}${process.env.BACKEND_URL ? "" : "  ⚠️ (BACKEND_URL not set — using local default)"}\n`);
 });

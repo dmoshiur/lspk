@@ -1,28 +1,21 @@
 {
-  "name": "bloodora",
-  "version": "2.0.0",
-  "description": "BloodOra - Ultra Modern Blood Donation Network | Node.js + Turso Serverless",
+  "name": "bloodora-frontend",
+  "version": "3.0.0",
+  "description": "BloodOra Frontend - presentation layer (EJS). Talks to the separated Backend API via the BACKEND_URL environment variable.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",
-    "start": "node server.js",
-    "db:init": "node src/db.js --init",
-    "db:seed": "node src/seed.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "@libsql/client": "^0.15.0",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "multer": "^1.4.5-lts.1",
-    "socket.io": "^4.7.5",
-    "uuid": "^10.0.0",
     "helmet": "^7.1.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1"
   },
   "engines": {
     "node": ">=18.0.0"
