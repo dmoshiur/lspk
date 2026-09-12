@@ -6,7 +6,7 @@
   <title><%= typeof title !== 'undefined' ? title : 'BloodOra - Blood Donation Network' %></title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" href="/logo.png">
-  <!-- Fonts: Inter for ultra crisp retina text + Bengali support -->
+  <!-- Fonts: Inter + Bengali support -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
@@ -29,7 +29,7 @@
       overflow-x:hidden;
     }
     h1,h2,h3,h4,h5,h6{ font-weight:600; letter-spacing:-.01em; }
-    /* Navbar - Glass Ultra Clean */
+    /* Navbar */
     .navbar{
       background:rgba(255,255,255,.92) !important;
       backdrop-filter:blur(14px) saturate(180%);
@@ -51,7 +51,7 @@
     .nav-link:hover{ background:var(--primary-soft); color:var(--primary)!important; }
     .nav-link.active{ background:var(--primary); color:#fff!important; box-shadow:0 4px 12px rgba(227,27,35,.2); }
     .navbar-toggler{ border:none; box-shadow:none!important; }
-    /* Buttons Ultra */
+    /* Buttons */
     .btn{ border-radius:999px; font-weight:600; letter-spacing:-.01em; padding:.5rem 1.1rem; font-size:.85rem; transition:all .2s; }
     .btn-danger{ background:linear-gradient(135deg,var(--primary),#ff3340); border:none; box-shadow:0 4px 12px rgba(227,27,35,.22); }
     .btn-danger:hover{ background:linear-gradient(135deg,var(--primary-dark),var(--primary)); transform:translateY(-1px); box-shadow:0 6px 16px rgba(227,27,35,.3); }
@@ -59,10 +59,10 @@
     .btn-outline-danger:hover{ background:var(--primary); border-color:var(--primary); color:#fff; transform:translateY(-1px); }
     .btn-light{ background:#fff; border:1px solid var(--border); color:var(--secondary); box-shadow:var(--shadow); }
     .btn-light:hover{ background:#f8fafc; transform:translateY(-1px); }
-    /* Cards Ultra */
+    /* Cards */
     .card{ border:1px solid rgba(226,232,240,.9); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow); overflow:hidden; transition:all .2s; }
     .card:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:rgba(227,27,35,.08); }
-    /* Hero Ultra */
+    /* Hero */
     .hero-section{
       background:
         radial-gradient(1200px 600px at 10% -20%, rgba(255,255,255,.18), transparent 60%),
@@ -86,14 +86,14 @@
     .process-step{ background:#fff; border-radius:var(--radius-lg); padding:20px; text-align:center; box-shadow:var(--shadow); border:1px solid rgba(226,232,240,.9); height:100%; transition:all .2s; }
     .process-step:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lg); }
     .step-number{ background:linear-gradient(135deg,var(--primary),#ff3340); color:#fff; width:36px; height:36px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; margin-bottom:10px; box-shadow:0 4px 12px rgba(227,27,35,.28); }
-    /* Footer Ultra */
+    /* Footer */
     .footer{ background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#cbd5e1; padding:44px 0 22px; margin-top:48px; border-top:1px solid rgba(255,255,255,.06); font-size:.85rem; }
     .footer a{ color:#94a3b8; text-decoration:none; transition:color .2s; }
     .footer a:hover{ color:#fff; }
     .footer h5{ color:#fff; font-weight:700; letter-spacing:-.01em; font-size:1rem; }
     .social-icons a{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); margin-right:8px; transition:all .2s; }
     .social-icons a:hover{ background:var(--primary); border-color:var(--primary); color:#fff; transform:translateY(-1px); }
-    /* Forms Ultra */
+    /* Forms */
     .form-control,.form-select{ border-radius:8px; padding:.5rem .8rem; font-size:.85rem; border:1.5px solid var(--border); background:#fff; font-weight:500; transition:all .2s; }
     .form-control:focus,.form-select:focus{ border-color:var(--primary); box-shadow:var(--ring); outline:none; }
     .form-label{ font-weight:600; font-size:.8rem; color:#334155; letter-spacing:-.01em; }
@@ -110,7 +110,7 @@
     @keyframes fadeIn{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
     .msg-user{ background:linear-gradient(135deg,var(--primary),#ff3340); color:#fff; border-bottom-right-radius:6px; box-shadow:0 4px 12px rgba(227,27,35,.2); margin-left:auto; }
     .msg-admin{ background:#fff; color:#0f172a; border:1px solid var(--border); border-bottom-left-radius:6px; box-shadow:var(--shadow); }
-    /* Retina image crisp */
+    /* Image rendering */
     img{ image-rendering:-webkit-optimize-contrast; }
     /* Utility */
     .text-primary{ color:var(--primary)!important; }
