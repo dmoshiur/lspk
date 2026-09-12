@@ -5,6 +5,9 @@ import { get, all, run } from "../db.js";
 import { requireAdmin, requireSuperAdmin, signToken, genSessionToken } from "../auth.js";
 import { upload } from "../upload.js";
 import { getClientIp, getDeviceFingerprint, normalizeUser, tryCatch } from "../utils.js";
+import { maskSmtpConfig, getSmtpConfig, testSmtp } from "../mailer.js";
+import { recordActivity, initials } from "../activity.js";
+import { antidReference, resourcesReference } from "../content.js";
 
 const router = express.Router();
 
@@ -47,7 +50,7 @@ router.post("/settings", requireAdmin, (req, res) =>
       s = await get("SELECT * FROM site_settings LIMIT 1");
     }
     await run(
-      `UPDATE site_settings SET site_name=?, site_email=?, site_phone=?, site_address=?, site_description=?, facebook_url=?, twitter_url=?, instagram_url=?, linkedin_url=?, bkash_merchant_number=?, nagad_merchant_number=?, upay_merchant_number=?, rocket_merchant_number=?, pathao_merchant_number=?, updated_at=? WHERE id=?`,
+      `UPDATE site_settings SET site_name=?, site_email=?, site_phone=?, site_address=?, site_description=?, facebook_url=?, twitter_url=?, instagram_url=?, linkedin_url=?, bkash_merchant_number=?, nagad_merchant_number=?, upay_merchant_number=?, rocket_merchant_number=?, pathao_merchant_number=?, site_tagline=?, default_language=?, updated_at=? WHERE id=?`,
       [
         req.body.site_name || s.site_name, req.body.site_email || s.site_email,
         req.body.site_phone || s.site_phone, req.body.site_address || s.site_address,
@@ -56,12 +59,244 @@ router.post("/settings", requireAdmin, (req, res) =>
         req.body.linkedin_url || s.linkedin_url, req.body.bkash_merchant_number || s.bkash_merchant_number,
         req.body.nagad_merchant_number || s.nagad_merchant_number, req.body.upay_merchant_number || s.upay_merchant_number,
         req.body.rocket_merchant_number || s.rocket_merchant_number, req.body.pathao_merchant_number || s.pathao_merchant_number,
+        req.body.site_tagline ?? s.site_tagline,
+        ["en", "bn", "ar"].includes(req.body.default_language) ? req.body.default_language : s.default_language,
         new Date().toISOString(), s.id,
       ]
     );
     res.json({ success: true, message: "✅ Site settings updated successfully!" });
   })
 );
+
+// ---------- Branding & Identity (logo, favicon, colours, typography) ----------
+
+// GET /api/admin/branding
+router.get("/branding", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const s = (await get("SELECT * FROM site_settings LIMIT 1")) || {};
+    res.json({ success: true, settings: maskSmtpConfig(s) });
+  })
+);
+
+// POST /api/admin/branding — multipart: logo, favicon + text/colour fields
+router.post("/branding", requireAdmin, upload.fields([{ name: "logo", maxCount: 1 }, { name: "favicon", maxCount: 1 }]), (req, res) =>
+  tryCatch(res, async () => {
+    let s = await get("SELECT * FROM site_settings LIMIT 1");
+    if (!s) { await run(`INSERT INTO site_settings (site_name) VALUES ('BloodOra')`); s = await get("SELECT * FROM site_settings LIMIT 1"); }
+
+    const files = req.files || {};
+    const logo = files.logo?.[0]?.filename;
+    const favicon = files.favicon?.[0]?.filename;
+    const b = req.body || {};
+    const hex = (v, fallback) => (/^#[0-9a-fA-F]{6}$/.test(String(v || "").trim()) ? String(v).trim() : fallback);
+    const fontStyle = ["calligraphic", "modern", "serif", "classic"].includes(b.brand_font_style) ? b.brand_font_style : "calligraphic";
+
+    await run(
+      `UPDATE site_settings SET site_name=?, site_tagline=?, site_description=?, logo_file=?, favicon_file=?,
+       brand_primary=?, brand_accent=?, brand_font_style=?, updated_at=? WHERE id=?`,
+      [
+        b.site_name || s.site_name,
+        b.site_tagline ?? s.site_tagline,
+        b.site_description ?? s.site_description,
+        logo || s.logo_file || "logo.png",
+        favicon || s.favicon_file || "favicon.ico",
+        hex(b.brand_primary, s.brand_primary || "#e31b23"),
+        hex(b.brand_accent, s.brand_accent || "#ff3340"),
+        fontStyle,
+        new Date().toISOString(),
+        s.id,
+      ]
+    );
+    const bits = [];
+    if (logo) bits.push("logo");
+    if (favicon) bits.push("favicon");
+    res.json({
+      success: true,
+      message: `✅ Branding saved${bits.length ? ` (uploaded: ${bits.join(", ")})` : ""}. Reload the site to see it everywhere.`,
+    });
+  })
+);
+
+// ---------- SMTP / Email configuration ----------
+
+// GET /api/admin/smtp
+router.get("/smtp", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const cfg = await getSmtpConfig();
+    res.json({ success: true, settings: maskSmtpConfig(cfg) });
+  })
+);
+
+// POST /api/admin/smtp
+router.post("/smtp", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    let s = await get("SELECT * FROM site_settings LIMIT 1");
+    if (!s) { await run(`INSERT INTO site_settings (site_name) VALUES ('BloodOra')`); s = await get("SELECT * FROM site_settings LIMIT 1"); }
+
+    const b = req.body || {};
+    // A password made only of bullets means "keep the stored one".
+    let pass = s.smtp_pass || "";
+    if (b.smtp_pass !== undefined) {
+      const incoming = String(b.smtp_pass);
+      if (incoming === "") pass = "";
+      else if (!/•/.test(incoming)) pass = incoming;
+    }
+
+    await run(
+      `UPDATE site_settings SET smtp_enabled=?, smtp_host=?, smtp_port=?, smtp_secure=?, smtp_user=?, smtp_pass=?,
+       smtp_from_name=?, smtp_from_email=?, updated_at=? WHERE id=?`,
+      [
+        b.smtp_enabled ? 1 : 0,
+        String(b.smtp_host || "").trim(),
+        parseInt(b.smtp_port || "587", 10),
+        b.smtp_secure ? 1 : 0,
+        String(b.smtp_user || "").trim(),
+        pass,
+        String(b.smtp_from_name || s.site_name || "BloodOra"),
+        String(b.smtp_from_email || "").trim(),
+        new Date().toISOString(),
+        s.id,
+      ]
+    );
+    res.json({ success: true, message: "✅ SMTP settings saved." });
+  })
+);
+
+// POST /api/admin/smtp/test — sends a real test email and reports the true error
+router.post("/smtp/test", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const result = await testSmtp(req.body?.to);
+    res.json(result);
+  })
+);
+
+// GET /api/admin/smtp/log
+router.get("/smtp/log", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    let logs = [];
+    try { logs = await all("SELECT * FROM email_log ORDER BY id DESC LIMIT 100"); } catch (e) { logs = []; }
+    res.json({ success: true, logs });
+  })
+);
+
+// ---------- Content Manager: Anti-D entries ----------
+
+router.get("/content/antid", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const entries = await all("SELECT * FROM anti_d_info ORDER BY id ASC");
+    res.json({ success: true, entries, reference: antidReference });
+  })
+);
+
+router.post("/content/antid", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const { title, description, timing, dosage } = req.body || {};
+    if (!title || !description) {
+      return res.status(400).json({ success: false, message: "❌ Title and description are required." });
+    }
+    await run(
+      "INSERT INTO anti_d_info (title, description, timing, dosage, created_at) VALUES (?,?,?,?,?)",
+      [String(title).trim(), String(description).trim(), String(timing || "").trim(), String(dosage || "").trim(), new Date().toISOString()]
+    );
+    res.json({ success: true, message: "✅ Anti-D entry added." });
+  })
+);
+
+router.put("/content/antid/:id", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const row = await get("SELECT * FROM anti_d_info WHERE id=?", [req.params.id]);
+    if (!row) return res.status(404).json({ success: false, message: "Entry not found." });
+    const b = req.body || {};
+    await run(
+      "UPDATE anti_d_info SET title=?, description=?, timing=?, dosage=? WHERE id=?",
+      [String(b.title ?? row.title), String(b.description ?? row.description), String(b.timing ?? row.timing), String(b.dosage ?? row.dosage), req.params.id]
+    );
+    res.json({ success: true, message: "✅ Anti-D entry updated." });
+  })
+);
+
+router.delete("/content/antid/:id", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const row = await get("SELECT * FROM anti_d_info WHERE id=?", [req.params.id]);
+    if (!row) return res.status(404).json({ success: false, message: "Entry not found." });
+    await run("DELETE FROM anti_d_info WHERE id=?", [req.params.id]);
+    res.json({ success: true, message: `🗑️ “${row.title}” deleted. The built-in clinical reference still shows on the page.` });
+  })
+);
+
+// ---------- Content Manager: Educational resources ----------
+
+router.get("/content/resources", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const resources = await all("SELECT * FROM resources ORDER BY is_featured DESC, id DESC");
+    res.json({ success: true, resources, core: resourcesReference });
+  })
+);
+
+router.post("/content/resources", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const b = req.body || {};
+    if (!b.title || !b.content) {
+      return res.status(400).json({ success: false, message: "❌ Title and content are required." });
+    }
+    await run(
+      "INSERT INTO resources (title, category, content, summary, read_time, is_featured, created_at) VALUES (?,?,?,?,?,?,?)",
+      [
+        String(b.title).trim(), String(b.category || "Education").trim(), String(b.content).trim(),
+        String(b.summary || "").trim(), String(b.read_time || "").trim(), b.is_featured ? 1 : 0, new Date().toISOString(),
+      ]
+    );
+    res.json({ success: true, message: "✅ Resource published." });
+  })
+);
+
+router.put("/content/resources/:id", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const row = await get("SELECT * FROM resources WHERE id=?", [req.params.id]);
+    if (!row) return res.status(404).json({ success: false, message: "Resource not found." });
+    const b = req.body || {};
+    await run(
+      "UPDATE resources SET title=?, category=?, content=?, summary=?, read_time=?, is_featured=? WHERE id=?",
+      [
+        String(b.title ?? row.title), String(b.category ?? row.category), String(b.content ?? row.content),
+        String(b.summary ?? row.summary ?? ""), String(b.read_time ?? row.read_time ?? ""),
+        b.is_featured === undefined ? row.is_featured : (b.is_featured ? 1 : 0), req.params.id,
+      ]
+    );
+    res.json({ success: true, message: "✅ Resource updated." });
+  })
+);
+
+router.delete("/content/resources/:id", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const row = await get("SELECT * FROM resources WHERE id=?", [req.params.id]);
+    if (!row) return res.status(404).json({ success: false, message: "Resource not found." });
+    await run("DELETE FROM resources WHERE id=?", [req.params.id]);
+    res.json({ success: true, message: `🗑️ “${row.title}” deleted.` });
+  })
+);
+
+// ---------- Live Activity feed ----------
+
+router.get("/activity", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    let events = [];
+    try { events = await all("SELECT * FROM activity_events ORDER BY id DESC LIMIT 100"); } catch (e) { events = []; }
+    res.json({ success: true, events });
+  })
+);
+
+router.post("/activity/announce", requireAdmin, (req, res) =>
+  tryCatch(res, async () => {
+    const title = String(req.body?.title || "").trim();
+    if (!title) return res.status(400).json({ success: false, message: "❌ A headline is required." });
+    await recordActivity(
+      "notice", title, String(req.body?.detail || "").trim(), req.body?.link ? String(req.body.link).trim() : "/"
+    );
+    res.json({ success: true, message: "📣 Announced to the Live Activity feed." });
+  })
+);
+
 
 // ---------- Site Notice ----------
 
@@ -90,6 +325,12 @@ router.post("/verify-donor/:id", requireAdmin, (req, res) =>
     const user = await get("SELECT * FROM users WHERE id=?", [req.params.id]);
     if (user && user.age >= 18) {
       await run("UPDATE users SET is_verified=1 WHERE id=?", [req.params.id]);
+      await recordActivity(
+        "donor_verified",
+        `${user.blood_group || "Donor"} donor verified`,
+        `${initials(user.name)} • ${user.upazila || user.district || "Bangladesh"}`,
+        `/donors/profile/view/${user.id}`
+      );
       return res.json({ success: true, message: `✅ ${user.name} is now a verified donor!` });
     }
     res.status(400).json({ success: false, type: "warning", message: "⚠️ User must be 18+ to be verified." });
@@ -240,6 +481,7 @@ router.post("/products", requireAdmin, upload.single("image"), (req, res) =>
       `INSERT INTO products (name, description, price, category, stock, image_file, is_available) VALUES (?,?,?,?,?,?,1)`,
       [name, description, parseFloat(price), category, parseInt(stock || 0), filename]
     );
+    await recordActivity("product_added", `${name} added to the shop`, `৳${parseFloat(price)} • ${category || "General"}`, `/shop/product/${(await get("SELECT last_insert_rowid() as id"))?.id || ""}`);
     res.json({ success: true, message: `✅ Product '${name}' added!` });
   })
 );
@@ -311,6 +553,10 @@ router.post("/orders/:id/status", requireAdmin, (req, res) =>
   tryCatch(res, async () => {
     const { status } = req.body;
     await run("UPDATE orders SET status=?, updated_at=? WHERE id=?", [status, new Date().toISOString(), req.params.id]);
+    if (status === "delivered") {
+      const o = await get("SELECT * FROM orders WHERE id=?", [req.params.id]);
+      await recordActivity("order_delivered", `Order #${req.params.id} delivered`, `${o?.delivery_upazila || "Kalai"} • ৳${Number(o?.total_amount || 0).toFixed(0)}`, "/shop/my-orders");
+    }
     res.json({ success: true, message: `✅ Order status updated to ${status}.` });
   })
 );

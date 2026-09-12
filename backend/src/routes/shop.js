@@ -4,6 +4,9 @@ import express from "express";
 import { get, all, run } from "../db.js";
 import { requireAuth } from "../auth.js";
 import { tryCatch } from "../utils.js";
+import { recordActivity, initials } from "../activity.js";
+import { sendOrderConfirmation } from "../mailer.js";
+import { getSmtpConfig } from "../mailer.js";
 
 const router = express.Router();
 
@@ -196,6 +199,23 @@ router.post("/orders", requireAuth, (req, res) =>
       );
       await run(`UPDATE products SET stock = stock - ? WHERE id=? AND stock >= ?`, [item.quantity, item.product.id, item.quantity]);
     }
+
+    await recordActivity(
+      "order_placed",
+      `New shop order #${orderId}`,
+      `${initials(req.user.name)} • ${upazila} • ৳${total.toFixed(0)}`,
+      "/shop/my-orders"
+    );
+
+    // Email the confirmation receipt (only when the admin has configured SMTP)
+    try {
+      const cfg = await getSmtpConfig();
+      if (Number(cfg.smtp_enabled) && req.user.email) {
+        const orderRow = await get("SELECT * FROM orders WHERE id=?", [orderId]);
+        const itemRows = await all("SELECT * FROM order_items WHERE order_id=?", [orderId]);
+        sendOrderConfirmation({ to: req.user.email, order: orderRow, items: itemRows, siteName: cfg.site_name }).catch(() => {});
+      }
+    } catch (e) { /* never fail an order because email failed */ }
 
     res.json({ success: true, orderId, message: "✅ Order placed successfully! Admin will confirm your payment." });
   })

@@ -20,14 +20,30 @@ async function resolveSessionCart(req) {
 }
 
 // GET /shop
+// NOTE: this used to redirect to "/" whenever the catalogue call failed, which
+// made the shop look completely unreachable. It now always renders: real
+// products when the API answers, a clear error banner when it does not.
 router.get("/", async (req, res) => {
+  const title = `${req.t("shop_title")} - ${res.locals.siteName}`;
   try {
     const d = await apiGet("/api/shop/products", null, { category: req.query.category, search: req.query.search });
-    res.render("shop", { title: "Shop - BloodOra", products: d.products, categories: d.categories, query: req.query });
+    return res.render("shop", {
+      title,
+      products: d.products || [],
+      categories: d.categories || [],
+      query: req.query,
+      shopError: null,
+    });
   } catch (e) {
-    console.error(e.message);
-    req.session.flash = { type: "danger", message: "❌ Shop loading failed." };
-    res.redirect("/");
+    console.error("shop catalogue:", e.message);
+    // Still render the page so the visitor sees *why*, with a retry link.
+    return res.render("shop", {
+      title,
+      products: [],
+      categories: [],
+      query: req.query,
+      shopError: e.message || "Could not load the shop catalogue.",
+    });
   }
 });
 
@@ -35,9 +51,17 @@ router.get("/", async (req, res) => {
 router.get("/product/:id", async (req, res) => {
   try {
     const d = await apiGet(`/api/shop/products/${req.params.id}`);
-    res.render("product_detail", { title: d.product.name + " - BloodOra", product: d.product });
+    return res.render("product_detail", { title: d.product.name + " - " + res.locals.siteName, product: d.product });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    if (e.status === 404) {
+      return res.status(404).render("404", { title: req.t("err_404_title"), requestPath: req.originalUrl });
+    }
+    // Upstream/API failure is NOT a 404 — say what actually happened.
+    return res.status(502).render("500", {
+      title: req.t("err_500_title"),
+      detail: e.message,
+      requestPath: req.originalUrl,
+    });
   }
 });
 

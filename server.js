@@ -21,6 +21,12 @@ import bloodRoutes from "./src/routes/blood.js";
 import shopRoutes from "./src/routes/shop.js";
 import adminRoutes from "./src/routes/admin.js";
 import messageRoutes from "./src/routes/messages.js";
+import reviewRoutes from "./src/routes/reviews.js";
+import supportRoutes from "./src/routes/support.js";
+import aiRoutes from "./src/routes/ai.js";
+
+import { siteContext } from "./src/middleware/site.js";
+import { DEFAULT_LANG } from "./src/i18n.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +80,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Language + site identity (branding) — must run before loadUser so every
+// handler and view has `t()`, `lang`, `dir` and `branding` available.
+app.use(siteContext);
+
 // Load current user from the backend API (JWT kept in session)
 app.use(loadUser);
 
@@ -101,6 +111,9 @@ app.use("/", bloodRoutes); // /request-blood, /blood-requests, /blood-request/:i
 app.use("/shop", shopRoutes);
 app.use("/admin", adminRoutes);
 app.use("/messages", messageRoutes);
+app.use("/reviews", reviewRoutes);
+app.use("/support", supportRoutes);   // Live Messaging (human support)
+app.use("/ai-help", aiRoutes);        // Live AI Help (Groq / Qwen3.6 27B)
 
 // Aliases for compatibility with old URL names
 app.get("/profile/switch-back", (req, res) => res.redirect("/admin/profile/switch-back"));
@@ -126,13 +139,66 @@ app.post("/apply-for-verification", (req, res) => res.redirect(307, "/donors/app
 app.get("/admin/messages", (req, res) => res.redirect("/messages/admin/messages"));
 app.get("/admin/message/reply/:id", (req, res) => res.redirect(`/messages/admin/message/reply/${req.params.id}`));
 
-// ---------- 404 & Error ----------
+// ---------- Custom error pages: 400 / 403 / 404 / 500 ----------
+// `renderError` always answers with the right status code and a real page.
+// If rendering itself fails (template error, backend down) it degrades to a
+// minimal self-contained HTML page rather than an Express stack trace.
+function renderError(req, res, status, view, extra = {}) {
+  const titles = { 400: "Bad Request", 403: "Forbidden", 404: "Not Found", 500: "Server Error" };
+  res.status(status);
+  res.render(view, {
+    title: `${status} ${titles[status] || ""} - ${res.locals.siteName || "BloodOra"}`,
+    requestPath: req.originalUrl,
+    ...extra,
+  }, (err, html) => {
+    if (err) {
+      console.error(`renderError(${status}) failed:`, err.message);
+      if (!res.headersSent) {
+        res.set("Content-Type", "text/html; charset=utf-8").send(
+          `<!doctype html><html><head><meta charset="utf-8"><title>${status}</title>` +
+          `<style>body{font-family:Georgia,serif;background:#0f172a;color:#e2e8f0;display:flex;` +
+          `align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}` +
+          `h1{font-size:5rem;margin:0;color:#e31b23}a{color:#fda4af}</style></head>` +
+          `<body><div><h1>${status}</h1><p>${titles[status] || "Error"}</p>` +
+          `<p><a href="/">Go to home</a></p></div></body></html>`
+        );
+      }
+    } else {
+      res.send(html);
+    }
+  });
+}
+app.locals.renderError = renderError;
+
+/** Throw an HttpError with a status so any handler can trigger an error page. */
+export function httpError(status, message) {
+  const e = new Error(message || `HTTP ${status}`);
+  e.status = status;
+  return e;
+}
+
 app.use((req, res) => {
-  res.status(404).render("404", { title: "404 - Not Found" });
+  renderError(req, res, 404, "404");
 });
+
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).render("500", { title: "500 - Server Error" });
+  const status =
+    err.status || err.statusCode ||
+    (err.type === "entity.parse.failed" ? 400 : 0) ||
+    (err.type === "entity.too.large" ? 400 : 0) ||
+    (err.code === "LIMIT_FILE_SIZE" ? 400 : 0) ||
+    500;
+  if (status >= 500) console.error("Unhandled error:", err);
+
+  // API-style clients get JSON, browsers get the styled error page.
+  if ((req.headers.accept || "").includes("application/json") || req.xhr) {
+    return res.status(status).json({ success: false, message: err.message || "Error" });
+  }
+
+  const views = { 400: "400", 403: "403", 404: "404", 500: "500" };
+  const view = views[status] || "500";
+  const detail = status >= 500 ? (process.env.NODE_ENV === "production" ? "" : err.message) : err.message;
+  renderError(req, res, status, view, { detail });
 });
 
 // ---------- Start ----------

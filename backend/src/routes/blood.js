@@ -3,6 +3,7 @@ import express from "express";
 import { get, all, run } from "../db.js";
 import { requireAuth, optionalAuth } from "../auth.js";
 import { tryCatch } from "../utils.js";
+import { recordActivity, initials } from "../activity.js";
 
 const router = express.Router();
 
@@ -63,6 +64,16 @@ router.post("/", optionalAuth, (req, res) =>
       [requester_id, patient_name, patient_relation || "Self", blood_group, quantity || "1 unit", hospital_name, hospital_address || `${upazila}, ${district}, ${division}`, contact_person, contact_phone, contact_email || null, isUrgentVal, urgent_reason || null, needed_dt, division, district, upazila, additional_info || null, "open", now, now]
     );
 
+    const newId = (await get("SELECT last_insert_rowid() as id"))?.id;
+    await recordActivity(
+      isUrgentVal ? "request_urgent" : "request_posted",
+      isUrgentVal
+        ? `URGENT: ${blood_group} needed at ${hospital_name}`
+        : `${blood_group} needed — ${hospital_name}`,
+      `${district}${upazila ? ", " + upazila : ""} • for ${initials(patient_name)}`,
+      newId ? `/blood-request/${newId}` : "/blood-requests"
+    );
+
     res.json({
       success: true,
       type: isUrgentVal ? "warning" : "success",
@@ -95,6 +106,12 @@ router.post("/:id/fulfill", requireAuth, (req, res) =>
     if (br.is_fulfilled) return res.json({ success: true, type: "info", message: "ℹ️ Already fulfilled." });
     const now = new Date().toISOString();
     await run("UPDATE blood_requests SET is_fulfilled=1, fulfilled_at=?, fulfilled_by=?, status='fulfilled', updated_at=? WHERE id=?", [now, req.user.id, now, req.params.id]);
+    await recordActivity(
+      "request_fulfilled",
+      `${br.blood_group} request fulfilled`,
+      `${br.location_district || "Bangladesh"} • by ${initials(req.user.name)}`,
+      `/blood-request/${br.id}`
+    );
     res.json({
       success: true,
       message: br.is_urgent
