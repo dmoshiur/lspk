@@ -62,7 +62,7 @@ npm start
 # visit http://localhost:3000
 ```
 
-First registered user becomes **Super Admin** (auto). Login then:
+**Super Admin via `.env`** — set `SUPER_ADMIN_EMAIL` + `SUPER_ADMIN_PASSWORD` (optionally `SUPER_ADMIN_NAME` / `SUPER_ADMIN_PHONE`) in `.env` and the account is auto-provisioned (or confirmed as Super Admin) on every startup. Leave `SUPER_ADMIN_EMAIL` empty and the first registered user becomes **Super Admin** instead. Login then:
 - `/admin` → manage users, verify donors (18+), promote/demote, impersonate, create admins, site notice, backup
 - `/shop/admin/products` → add/edit/delete medicines
 - `/shop/admin/orders` → view/confirm payment/status/invoice
