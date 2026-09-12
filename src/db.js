@@ -10,16 +10,29 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TURSO_URL = process.env.TURSO_DATABASE_URL;
-const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN;
+// NOTE: On Vercel these are plain values set in the dashboard:
+// Project -> Settings -> Environment Variables
+// (the legacy "@secret-name" references in vercel.json are no longer supported by Vercel)
+const TURSO_URL = (process.env.TURSO_DATABASE_URL || "").trim();
+const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "").trim();
 
 // Choose client config: Turso if env present, else local file
 let clientConfig;
-if (TURSO_URL && TURSO_URL.startsWith("libsql://")) {
+if (TURSO_URL.startsWith("libsql://") || TURSO_URL.startsWith("https://")) {
   clientConfig = { url: TURSO_URL, authToken: TURSO_TOKEN };
   console.log("☁️  Using Turso Serverless DB:", TURSO_URL);
 } else {
-  const dbPath = path.join(__dirname, "../data/blood_network.db");
+  // Serverless platforms (e.g. Vercel) only allow writes to /tmp
+  const isServerless = Boolean(process.env.VERCEL);
+  const dbPath = isServerless
+    ? "/tmp/blood_network.db"
+    : path.join(__dirname, "../data/blood_network.db");
+  if (isServerless) {
+    console.warn(
+      "⚠️  TURSO_DATABASE_URL is not set to a libsql:// URL — falling back to an EPHEMERAL SQLite file in /tmp (data will not persist between invocations). " +
+      "Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN as plain values in your Vercel Project Settings -> Environment Variables."
+    );
+  }
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   clientConfig = { url: `file:${dbPath}` };
   console.log("💾 Using Local SQLite DB:", dbPath);

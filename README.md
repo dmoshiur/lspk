@@ -186,9 +186,12 @@ All EJS in `views/` mirror original Jinja templates (same field names, same vali
 ## ☁️ Deploy — Vercel (Serverless Turso)
 
 1. Push to GitHub → `vercel --prod` or Import Git Repo in Vercel Dashboard
-2. Env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `SESSION_SECRET`
+2. Env vars — set them in the **Vercel Dashboard** (Project → Settings → Environment Variables) or with `vercel env add`, as **plain values** (no `@` prefix):
+   - `TURSO_DATABASE_URL` = `libsql://bloodora-yourname.turso.io`
+   - `TURSO_AUTH_TOKEN` = `eyJ...`
+   - `SESSION_SECRET` = a long random string
 3. Build: `npm install` → Start: `node server.js` (Vercel auto-detects `vercel.json` if present)
-4. `vercel.json` included: routes to `server.js`
+4. `vercel.json` included: routes to `server.js` (⚠️ never put env vars / `@secret` references back into `vercel.json` — Vercel removed Secrets support and builds fail with: `Environment Variable "X" references Secret "y", which does not exist.`)
 
 Alternative: Render / Railway / Fly — same Node start.
 
