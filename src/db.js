@@ -1,6 +1,7 @@
 // ==================== BloodOra - Turso / libSQL Database Layer ====================
 // Supports both Turso serverless (libsql://) and local file fallback for dev
 import { createClient } from "@libsql/client";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -302,7 +303,49 @@ export async function initDB() {
     console.log("✅ Seeded 10 sample products");
   }
 
+  // ---------- Provision Super Admin from .env ----------
+  await seedSuperAdmin();
+
   console.log("✅ Database initialization complete!");
+}
+
+// Creates/confirms a Super Admin account driven entirely by environment variables.
+// Set SUPER_ADMIN_EMAIL + SUPER_ADMIN_PASSWORD (optionally NAME / PHONE) in .env.
+export async function seedSuperAdmin() {
+  const email = (process.env.SUPER_ADMIN_EMAIL || "").trim().toLowerCase();
+  if (!email) {
+    console.log("ℹ️  SUPER_ADMIN_EMAIL not set — skipping super admin provisioning.");
+    return;
+  }
+  const password = (process.env.SUPER_ADMIN_PASSWORD || "").trim();
+  const name = (process.env.SUPER_ADMIN_NAME || "Super Admin").trim();
+  const phone = (process.env.SUPER_ADMIN_PHONE || "+8801000000000").trim();
+
+  const existing = await get("SELECT * FROM users WHERE email = ?", [email]);
+  if (existing) {
+    await run(
+      "UPDATE users SET is_admin=1, is_super_admin=1, is_verified=1, can_donate=1 WHERE email=?",
+      [email]
+    );
+    console.log("✅ Super Admin account confirmed:", email);
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    console.warn(
+      "⚠️  SUPER_ADMIN_EMAIL set but SUPER_ADMIN_PASSWORD is missing/short — skipping super admin provisioning."
+    );
+    return;
+  }
+
+  const hash = await bcrypt.hash(password, 10);
+  await run(
+    `INSERT INTO users (name, email, phone, blood_group, password_hash, role, age,
+      is_admin, is_super_admin, is_verified, can_donate, district, upazila)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [name, email, phone, "O+", hash, "Both", 25, 1, 1, 1, 1, "Joypurhat", "Kalai"]
+  );
+  console.log("✅ Provisioned Super Admin:", email);
 }
 
 // Auto-init if run directly
