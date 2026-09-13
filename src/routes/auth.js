@@ -44,7 +44,7 @@ router.post("/register", upload.single("profile_pic"), async (req, res) => {
     const d = await apiPostForm("/api/auth/register", fd);
     setAuthSession(req, d.token, d.user);
     req.session.flash = { type: "success", message: d.message };
-    return res.redirect("/dashboard");
+    return res.redirect(d.user && (d.user.is_admin || d.user.is_super_admin) ? "/admin" : "/dashboard");
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Registration failed." };
     return res.redirect("/register");
@@ -63,9 +63,21 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     const d = await apiPost("/api/auth/login", { email, password });
     setAuthSession(req, d.token, d.user);
-    const next = req.query.next || "/dashboard";
+    // Keep the two protected areas separate: /dashboard is the normal user's
+    // dashboard, while administrators must enter the admin dashboard.  The
+    // old unconditional /dashboard redirect made admin logins land in the
+    // wrong area (and, on deployments where that legacy page was absent,
+    // appear as a 404).  Only honour a safe return URL for non-admin users;
+    // never let a normal user be redirected into the admin area.
+    const requestedNext = String(req.query.next || "");
+    const isAdmin = Boolean(d.user && (d.user.is_admin || d.user.is_super_admin));
+    const next = isAdmin
+      ? (requestedNext.startsWith("/admin") ? requestedNext : "/admin")
+      : (requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.startsWith("/admin")
+        ? requestedNext
+        : "/dashboard");
     req.session.flash = { type: "success", message: d.message || `👋 Welcome back, ${d.user.name}!` };
-    return res.redirect(next.startsWith("/") ? next : "/dashboard");
+    return res.redirect(next);
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Login error." };
     return res.redirect("/login");
