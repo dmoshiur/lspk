@@ -9,8 +9,16 @@
   const _p   = _b.brand_primary || '#e31b23';
   const _a   = _b.brand_accent  || '#ff3340';
   const _name= _b.site_name || 'BloodOra';
-  const _logo= '/' + (_b.logo_file || 'logo.png');
-  const _fav = '/' + (_b.favicon_file || 'favicon.ico');
+  const resolveAssetUrl = (url, fallback) => {
+    const target = (url && String(url).trim()) || fallback;
+    if (!target) return '';
+    if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('//') || target.startsWith('/')) {
+      return target;
+    }
+    return '/' + target;
+  };
+  const _logo= resolveAssetUrl(_b.logo_file, 'https://i.postimg.cc/Yh2VJ3f0/382eae28-a8b6-4e1d-b76a-a619bbc7ed06.png');
+  const _fav = resolveAssetUrl(_b.favicon_file, 'https://i.postimg.cc/NLkSJVTv/Chat-GPT-Image-Sep-13-2026-06-46-10-PM.png');
   const _tag = _b.site_tagline || '';
   const _langs = (typeof languages !== 'undefined' && languages) ? languages : [];
   const _cur   = (typeof currentLanguage !== 'undefined' && currentLanguage) ? currentLanguage : null;
@@ -226,7 +234,6 @@
     .tone-warning{ background:linear-gradient(135deg,#d97706,#f59e0b); }
     .tone-info{ background:linear-gradient(135deg,#0284c7,#38bdf8); }
     .stars{ color:#f59e0b; letter-spacing:1px; }
-    html[dir="rtl"] .ms-auto{ margin-left:auto !important; margin-right:0 !important; }
     @media (max-width:991px){
       .navbar-brand img{ height:30px; }
       .hero-section{ padding:42px 0 32px; }

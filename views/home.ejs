@@ -11,7 +11,7 @@
     <div class="row align-items-center">
       <div class="col-lg-7">
         <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-pill hero-glass" style="font-weight:700; font-size:.8rem; letter-spacing:.05em;">
-          <span class="badge bg-white text-danger rounded-pill px-2 py-1"><i class="fas fa-shield-heart me-1"></i>VERIFIED</span>
+          <span class="badge bg-white text-danger rounded-pill px-2 py-1"><i class="fas fa-shield-heart me-1"></i><%= _t('st_verified') %></span>
           <%= _t('home_hero_badge') %>
         </div>
         <h1 class="mb-3"><%= _t('home_hero_title') %> <i class="fas fa-heart" style="color:#ff8fa0;"></i></h1>
@@ -57,8 +57,8 @@
   <div class="row g-3">
     <div class="col-6 col-md-3"><div class="stat-card"><h3><%= _num(total_donors || 0) %></h3><p><%= _t('home_verified') %></p></div></div>
     <div class="col-6 col-md-3"><div class="stat-card"><h3><%= _num(urgent_requests || 0) %></h3><p><%= _t('home_urgent') %></p></div></div>
-    <div class="col-6 col-md-3"><div class="stat-card"><h3>64</h3><p><%= _t('home_districts') %></p></div></div>
-    <div class="col-6 col-md-3"><div class="stat-card"><h3>8</h3><p><%= _t('home_groups') %></p></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><h3><%= _num(64) %></h3><p><%= _t('home_districts') %></p></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><h3><%= _num(8) %></h3><p><%= _t('home_groups') %></p></div></div>
   </div>
 </section>
 
@@ -83,15 +83,15 @@
       <div class="col-md-4">
         <div class="card h-100" style="border-top:4px solid var(--primary);">
           <div class="card-header d-flex align-items-center justify-content-between" style="background:#fff0f0; border-bottom:1px solid #ffe4e6; color:#9f1239; font-weight:800;">
-            <span><i class="fas fa-ambulance me-2"></i>URGENT</span>
+            <span><i class="fas fa-ambulance me-2"></i><%= _t('st_urgent') %></span>
             <span class="badge bg-danger"><%= req.blood_group %></span>
           </div>
           <div class="card-body">
-            <h5 class="fw-bold"><%= req.blood_group %> Needed</h5>
+            <h5 class="fw-bold"><%= req.blood_group %> <%= _t('req_needed') %></h5>
             <div class="small text-muted d-grid gap-1">
-              <div><i class="fas fa-user me-2 text-danger"></i><strong>Patient:</strong> <%= req.patient_name %></div>
+              <div><i class="fas fa-user me-2 text-danger"></i><strong><%= _t('req_patient_name') %>:</strong> <%= req.patient_name %></div>
               <div><i class="fas fa-hospital me-2 text-danger"></i><%= req.hospital_name %>, <%= req.location_district %></div>
-              <div><i class="fas fa-clock me-2 text-danger"></i><%= new Date(req.needed_by).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) %></div>
+              <div><i class="fas fa-clock me-2 text-danger"></i><%= _t('req_needed') %>: <%= new Date(req.needed_by).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) %></div>
             </div>
           </div>
           <div class="card-footer bg-white border-0">
@@ -152,7 +152,7 @@
   <div class="card border-0 overflow-hidden" style="background:linear-gradient(135deg,#0f172a 0%, #1e293b 100%); color:#fff; border-radius:24px;">
     <div class="row g-0 align-items-center">
       <div class="col-lg-7 p-4 p-lg-5">
-        <div class="badge bg-danger rounded-pill mb-3 px-3 py-2"><i class="fas fa-shopping-bag me-2"></i><%= (typeof branding!=='undefined' && branding.site_name) ? branding.site_name : 'BloodOra' %> Shop</div>
+        <div class="badge bg-danger rounded-pill mb-3 px-3 py-2"><i class="fas fa-shopping-bag me-2"></i><%= (typeof branding!=='undefined' && branding.site_name) ? branding.site_name : 'BloodOra' %> <%= _t('adm_shop') %></div>
         <h3 class="fw-bold mb-2" style="color:#fff;"><%= _t('shop_title') %></h3>
         <p class="mb-3" style="color:#cbd5e1;"><%= _t('shop_sub') %></p>
         <div class="d-flex flex-wrap gap-2">
@@ -165,12 +165,12 @@
       <div class="col-lg-5 p-3">
         <div class="rounded-4 overflow-hidden" style="background:#fff; padding:14px;">
           <div class="d-flex gap-2">
-            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger" style="font-family:var(--font-display); font-size:1.3rem;">৳10</div><div class="small text-muted">Delivery</div></div>
-            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger"><i class="fas fa-shield-halved"></i> Genuine</div><div class="small text-muted">Verified stock</div></div>
-            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger"><i class="fas fa-file-invoice"></i> Invoice</div><div class="small text-muted">Printable</div></div>
+            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger" style="font-family:var(--font-display); font-size:1.3rem;">৳10</div><div class="small text-muted"><%= _t('shop_delivery_title') %></div></div>
+            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger"><i class="fas fa-shield-halved"></i> <%= _t('shop_genuine_stock') %></div></div>
+            <div class="flex-fill p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold text-danger"><i class="fas fa-file-invoice"></i> <%= _t('shop_printable_invoice') %></div></div>
           </div>
           <div class="mt-3">
-            <div class="small fw-bold text-muted mb-2">Latest reviews</div>
+            <div class="small fw-bold text-muted mb-2"><%= _t('shop_latest_reviews') %></div>
             <div class="d-grid gap-2" id="home-review-strip">
               <div class="small text-muted">…</div>
             </div>
@@ -190,6 +190,16 @@
    ===================================================================== */
 (function(){
   var LANG = <%- JSON.stringify(lang) %>;
+  var I18N_HOME = {
+    now: <%- JSON.stringify(_t('common_ago_now')) %>,
+    minAgo: <%- JSON.stringify(_t('common_ago_min')) %>,
+    hrAgo: <%- JSON.stringify(_t('common_ago_hr')) %>,
+    dayAgo: <%- JSON.stringify(_t('common_ago_day')) %>,
+    realtime: <%- JSON.stringify(_t('home_realtime')) %>,
+    polling: <%- JSON.stringify(_t('home_polling')) %>,
+    feedErr: <%- JSON.stringify(_t('home_feed_err')) %>,
+    noReviews: <%- JSON.stringify(_t('rev_none')) %>
+  };
   var feed = document.getElementById('live-feed');
   var sourceEl = document.getElementById('live-source');
   var badgeText = document.getElementById('live-badge-text');
@@ -201,10 +211,10 @@
     try { d = new Date(String(iso).includes('T') ? iso : String(iso).replace(' ', 'T') + 'Z'); } catch(e){ return ''; }
     var s = Math.floor((Date.now() - d.getTime()) / 1000);
     if (isNaN(s)) return '';
-    if (s < 60)   return LANG==='bn'?'এইমাত্র':LANG==='ar'?'الآن':'just now';
-    if (s < 3600) { var m = Math.floor(s/60); return m + (LANG==='bn'?' মিনিট আগে':LANG==='ar'?' د قبل':' min ago'); }
-    if (s < 86400){ var h = Math.floor(s/3600); return h + (LANG==='bn'?' ঘণ্টা আগে':LANG==='ar'?' س قبل':' hr ago'); }
-    var dd = Math.floor(s/86400); return dd + (LANG==='bn'?' দিন আগে':LANG==='ar'?' ي قبل':' d ago');
+    if (s < 60)   return I18N_HOME.now;
+    if (s < 3600) { var m = Math.floor(s/60); return I18N_HOME.minAgo.replace('{n}', m); }
+    if (s < 86400){ var h = Math.floor(s/3600); return I18N_HOME.hrAgo.replace('{n}', h); }
+    var dd = Math.floor(s/86400); return I18N_HOME.dayAgo.replace('{n}', dd);
   }
   function row(ev, prepend){
     if (!ev) return;
@@ -233,8 +243,8 @@
   }
   function setSource(mode){
     if (sourceEl) sourceEl.innerHTML = mode === 'live'
-      ? '<span class="text-success fw-bold"><i class="fas fa-bolt me-1"></i>' + (LANG==='bn'?'রিয়েল-টাইম':LANG==='ar'?'فوري':'real-time') + '</span>'
-      : '<i class="fas fa-rotate me-1"></i>' + (LANG==='bn'?'পোলিং':LANG==='ar'?'تحديث دوري':'polling');
+      ? '<span class="text-success fw-bold"><i class="fas fa-bolt me-1"></i>' + esc(I18N_HOME.realtime) + '</span>'
+      : '<i class="fas fa-rotate me-1"></i>' + esc(I18N_HOME.polling);
     if (badgeText) badgeText.textContent = <%- JSON.stringify(_t('home_live_on')) %>;
   }
 
@@ -250,7 +260,7 @@
       })
       .catch(function(){
         feed.innerHTML = '<div class="alert alert-warning border-0 text-center small mb-0 rounded-3">' +
-          (LANG==='bn'?'লাইভ ফিড লোড করা যায়নি।':'Could not load the live feed.') + '</div>';
+          esc(I18N_HOME.feedErr) + '</div>';
       });
   }
 
@@ -280,7 +290,7 @@
     var box = document.getElementById('home-review-strip');
     if (!box) return;
     var rs = ((d && d.reviews) || []).slice(0, 3);
-    if (!rs.length) { box.innerHTML = '<div class="small text-muted">' + <%- JSON.stringify(_t('rev_none')) %> + '</div>'; return; }
+    if (!rs.length) { box.innerHTML = '<div class="small text-muted">' + esc(I18N_HOME.noReviews) + '</div>'; return; }
     box.innerHTML = '';
     rs.forEach(function(rv){
       var href = rv.product_id ? ('/shop/product/' + rv.product_id) : '/reviews';

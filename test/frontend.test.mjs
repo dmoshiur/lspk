@@ -209,6 +209,56 @@ test("language switching sets the lang cookie and persists across requests", asy
   } finally { server.close(); }
 });
 
+test("all core public pages render 200 in EN, BN, and AR with fallback content", async () => {
+  const server = app.listen(0);
+  const pages = [
+    "/",
+    "/login",
+    "/register",
+    "/donors",
+    "/blood-requests",
+    "/urgent",
+    "/shop",
+    "/shop/cart",
+    "/antid",
+    "/compatibility",
+    "/donation-guidelines",
+    "/resources",
+    "/reviews",
+    "/faq",
+    "/contact",
+  ];
+  try {
+    for (const lang of ["en", "bn", "ar"]) {
+      for (const p of pages) {
+        const res = await request(server, "GET", p, { headers: { cookie: `lang=${lang}` } });
+        assert.equal(res.status, 200, `${p} failed in ${lang} with status ${res.status}`);
+        assert.ok(res.body.includes(`lang="${lang}"`), `${p} must have lang="${lang}"`);
+        if (lang === "ar") {
+          assert.ok(res.body.includes('dir="rtl"'), `${p} in ar must have dir="rtl"`);
+          assert.ok(res.body.includes("bootstrap.rtl.min.css"), `${p} in ar must include bootstrap.rtl.min.css`);
+        }
+      }
+    }
+  } finally { server.close(); }
+});
+
+test("branding defaults use the exact user-specified logo and favicon URLs", async () => {
+  const { fetchBranding } = await import("../src/middleware/site.js");
+  const branding = await fetchBranding();
+  assert.equal(branding.logo_file, "https://i.postimg.cc/Yh2VJ3f0/382eae28-a8b6-4e1d-b76a-a619bbc7ed06.png");
+  assert.equal(branding.favicon_file, "https://i.postimg.cc/NLkSJVTv/Chat-GPT-Image-Sep-13-2026-06-46-10-PM.png");
+});
+
+test("header and footer include the logo and favicon links", async () => {
+  const server = app.listen(0);
+  try {
+    const res = await request(server, "GET", "/");
+    assert.ok(res.body.includes("https://i.postimg.cc/Yh2VJ3f0/382eae28-a8b6-4e1d-b76a-a619bbc7ed06.png"), "page must include logo URL");
+    assert.ok(res.body.includes("https://i.postimg.cc/NLkSJVTv/Chat-GPT-Image-Sep-13-2026-06-46-10-PM.png"), "page must include favicon URL");
+  } finally { server.close(); }
+});
+
 test("unknown routes render the styled 404, not a stack trace", async () => {
   const server = app.listen(0);
   try {
