@@ -1,7 +1,8 @@
 <%- include('../partials/header') %>
 <%
   const _t2 = (typeof t === 'function') ? t : (k) => k;
-  const _esc2 = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const _num = (n) => { if (lang !== 'bn') return String(n); const b=['০','১','২','৩','৪','৫','৬','৭','৮','৯']; return String(n).replace(/\d/g,d=>b[d]); };
   const fmtDate = (v) => { try { return new Date(String(v).includes('T') ? v : String(v).replace(' ','T') + 'Z').toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e){ return String(v||'').slice(0,16); } };
   const stLabel = { pending: _t2('st_pending'), processing: _t2('st_processing'), completed: _t2('st_completed'), cancelled: _t2('st_cancelled') };
@@ -10,7 +11,7 @@
   const _ac = (typeof activity !== 'undefined' && activity) ? activity : { ok: false, list: [] };
   const _su = (typeof support !== 'undefined' && support) ? support : { ok: false, sessions: [], unread: 0 };
   const _reg = (typeof recent_registrations !== 'undefined' && recent_registrations) ? recent_registrations : [];
-  const panelError = `<div class="alert alert-light border small rounded-4 mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>${_esc2(_t2('common_load_failed'))}</div>`;
+  const panelError = `<div class="alert alert-light border small rounded-4 mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>${_t2('common_load_failed')}</div>`;
 %>
 <style>
   .stat-card{ background:#fff; border-radius:18px; padding:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(15,23,42,.06); display:flex; align-items:center; gap:14px; height:100%; }
@@ -150,8 +151,8 @@
                     <a href="/admin/live-chat" class="activity-item">
                       <div class="activity-icon tone-info"><i class="fas fa-user"></i></div>
                       <div style="min-width:0;">
-                        <div class="fw-bold" style="font-size:.88rem;"><%= _esc2(s.visitor_name || 'Guest') %> <% if (s.online) { %><span class="badge bg-success rounded-pill"><%= _t2('chat_online') %></span><% } %></div>
-                        <div class="small text-muted text-truncate"><%= _esc2(s.last_message || '') %></div>
+                        <div class="fw-bold" style="font-size:.88rem;"><%= s.visitor_name || 'Guest' %> <% if (s.online) { %><span class="badge bg-success rounded-pill"><%= _t2('chat_online') %></span><% } %></div>
+                        <div class="small text-muted text-truncate"><%= s.last_message || '' %></div>
                       </div>
                       <% if (s.unread_admin) { %><span class="badge bg-danger rounded-pill ms-auto"><%= s.unread_admin %></span><% } %>
                     </a>
@@ -175,9 +176,9 @@
                 <div class="d-grid gap-2">
                   <% _ac.list.forEach(function(ev){ %>
                     <div class="activity-item">
-                      <div class="activity-icon tone-<%= _esc2(ev.tone || 'info') %>"><i class="fas <%= _esc2(ev.icon || 'fa-circle-info') %>"></i></div>
+                      <div class="activity-icon tone-<%= ev.tone || 'info' %>"><i class="fas <%= ev.icon || 'fa-circle-info' %>"></i></div>
                       <div style="min-width:0;">
-                        <div class="small"><%= _esc2(ev.message || '') %></div>
+                        <div class="small"><%= ev.message || '' %></div>
                         <div class="small text-muted"><%= ev.created_at ? fmtDate(ev.created_at) : '' %></div>
                       </div>
                     </div>

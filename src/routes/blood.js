@@ -7,7 +7,7 @@ const router = express.Router();
 
 // GET request-blood form
 router.get("/request-blood", (req, res) => {
-  res.render("request_blood", { title: "Request Blood - BloodOra" });
+  res.render("request_blood", { title: `${req.t("nav_request")} - ${res.locals.siteName}` });
 });
 
 // POST request-blood
@@ -28,9 +28,9 @@ router.get("/blood-requests", async (req, res) => {
     const d = await apiGet("/api/blood-requests", null, {
       bg: req.query.bg, dist: req.query.dist, division: req.query.division, urgent: req.query.urgent,
     });
-    res.render("blood_requests", { title: "Blood Requests - BloodOra", requests: d.requests, query: req.query });
+    res.render("blood_requests", { title: `${req.t("req_title")} - ${res.locals.siteName}`, requests: d.requests, query: req.query });
   } catch (e) {
-    res.render("blood_requests", { title: "Blood Requests - BloodOra", requests: [], query: {} });
+    res.render("blood_requests", { title: `${req.t("req_title")} - ${res.locals.siteName}`, requests: [], query: {} });
   }
 });
 
@@ -38,9 +38,9 @@ router.get("/blood-requests", async (req, res) => {
 router.get("/urgent", async (req, res) => {
   try {
     const d = await apiGet("/api/blood-requests/urgent");
-    res.render("urgent", { title: "Urgent Requests - BloodOra", urgent_requests: d.requests });
+    res.render("urgent", { title: `${req.t("page_urgent")} - ${res.locals.siteName}`, urgent_requests: d.requests });
   } catch (e) {
-    res.render("urgent", { title: "Urgent Requests - BloodOra", urgent_requests: [] });
+    res.render("urgent", { title: `${req.t("page_urgent")} - ${res.locals.siteName}`, urgent_requests: [] });
   }
 });
 
@@ -58,9 +58,9 @@ router.post("/urgent-contact", async (req, res) => {
 router.get("/blood-request/:id", async (req, res) => {
   try {
     const d = await apiGet(`/api/blood-requests/${req.params.id}`);
-    res.render("view_blood_request", { title: "Request Details - BloodOra", request: d.request });
+    res.render("view_blood_request", { title: `${req.t("page_req_detail")} - ${res.locals.siteName}`, request: d.request });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 

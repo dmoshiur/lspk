@@ -558,6 +558,15 @@ const dict = {
   res_articles_count:{ en: "articles",        bn: "টি আর্টিকেল",               ar: "مقالًا" },
   res_no_match:    { en: "No articles match this filter.", bn: "এই ফিল্টারে কোনো আর্টিকেল পাওয়া যায়নি।", ar: "لا توجد مقالات مطابقة لهذا الفلتر." },
   res_related_title:{ en: "Related references", bn: "সম্পর্কিত রেফারেন্স",     ar: "مراجع ذات صلة" },
+  // Resource categories. The stored category is the canonical English key
+  // (it drives the URL filter and the icon/colour maps) — these are the labels.
+  res_cat_donation:{ en: "Donation",         bn: "দান",                    ar: "التبرع" },
+  res_cat_education:{ en: "Education",       bn: "শিক্ষা",                   ar: "التعليم" },
+  res_cat_first_aid:{ en: "First-Aid",       bn: "প্রাথমিক চিকিৎসা",         ar: "الإسعافات الأولية" },
+  res_cat_health:  { en: "Health",           bn: "স্বাস্থ্য",                 ar: "الصحة" },
+  res_cat_general: { en: "General",          bn: "সাধারণ",                  ar: "عام" },
+  res_admin_badge: { en: "Admin",            bn: "অ্যাডমিন",                ar: "المشرف" },
+  res_min:         { en: "min read",         bn: "মিনিট পড়া",               ar: "دقائق قراءة" },
 
   // ---------- donation guidelines ----------
   guide_who_can:   { en: "Who Can Donate?",   bn: "কারা রক্ত দিতে পারেন?",      ar: "من يمكنه التبرع؟" },
@@ -671,6 +680,9 @@ const dict = {
   adm_invoice_thank:{ en: "Thank you for shopping with BloodOra • Delivery only in Kalai • Support: {upa} ৳10", bn: "BloodOra থেকে কেনাকাটা করার জন্য ধন্যবাদ • শুধু কলাইতে ডেলিভারি • সাপোর্ট: {upa} ৳১০", ar: "شكرًا لتسوقك مع BloodOra • التوصيل في كالاي فقط • الدعم: {upa} ৳10" },
 
   // ---------- footer ----------
+  site_meta_description:{ en: "Bangladesh blood donation network and medical shop.", bn: "বাংলাদেশের রক্তদান নেটওয়ার্ক ও মেডিকেল দোকান।", ar: "شبكة التبرع بالدم والمتجر الطبي في بنغلاديش." },
+  site_default_description:{ en: "Bangladesh's smart blood donation platform — connecting verified donors, urgent requests, and a complete medical shop in one place.", bn: "বাংলাদেশের স্মার্ট রক্তদান প্ল্যাটফর্ম — যাচাইকৃত দাতা, জরুরি আবেদন আর সম্পূর্ণ মেডিকেল দোকান এক জায়গায়।", ar: "منصة بنغلاديش الذكية للتبرع بالدم — تربط المتبرعين الموثّقين والطلبات العاجلة ومتجرًا طبيًا متكاملًا في مكان واحد." },
+
   foot_platform:   { en: "Platform",          bn: "প্ল্যাটফর্ম",               ar: "المنصة" },
   foot_resources:  { en: "Resources",         bn: "রিসোর্স",                   ar: "الموارد" },
   foot_contact:    { en: "Contact",           bn: "যোগাযোগ",                   ar: "اتصل بنا" },
@@ -691,6 +703,20 @@ const dict = {
   err_ai:          { en: "Ask the AI Assistant", bn: "এআই সহায়ককে জিজ্ঞাসা করুন", ar: "اسأل المساعد الذكي" },
   err_what:        { en: "Popular pages",     bn: "জনপ্রিয় পেজ",               ar: "صفحات شائعة" },
 
+  // ---------- page <title> strings (were hardcoded English in the routes) ----------
+  page_urgent:     { en: "Urgent Requests",    bn: "জরুরি আবেদন",                ar: "طلبات عاجلة" },
+  page_req_detail: { en: "Request Details",    bn: "আবেদনের বিস্তারিত",            ar: "تفاصيل الطلب" },
+  page_msg_send:   { en: "Send Message",       bn: "বার্তা পাঠান",                ar: "إرسال رسالة" },
+  page_msg_read:   { en: "Read Message",       bn: "বার্তা পড়ুন",                 ar: "قراءة الرسالة" },
+  page_msg_reply:  { en: "Reply",              bn: "উত্তর",                       ar: "رد" },
+  page_checkout:   { en: "Checkout",           bn: "চেকআউট",                     ar: "إتمام الشراء" },
+  page_order_ok:   { en: "Order Confirmed",    bn: "অর্ডার নিশ্চিত হয়েছে",         ar: "تم تأكيد الطلب" },
+  page_not_found:  { en: "Not Found",          bn: "পাওয়া যায়নি",                 ar: "غير موجود" },
+  page_bad_lang:   { en: "Unsupported language", bn: "অসমর্থিত ভাষা",             ar: "لغة غير مدعومة" },
+  page_bad_lang_hint:{ en: "Supported languages: {langs}.", bn: "সমর্থিত ভাষা: {langs}।", ar: "اللغات المدعومة: {langs}." },
+  shop_load_error: { en: "The medical shop could not be reached right now. Your cart is safe — please try again.", bn: "এই মুহূর্তে মেডিকেল দোকানে পৌঁছানো যায়নি। আপনার কার্ট নিরাপদ — আবার চেষ্টা করুন।", ar: "تعذّر الوصول إلى المتجر الطبي حاليًا. سلّتك بأمان — يرجى المحاولة مرة أخرى." },
+  home_payment_methods:{ en: "bKash/Nagad/Rocket/Upay/Pathao/Card/COD", bn: "বিকাশ/নগদ/রকেট/উপায়/পাঠাও/কার্ড/ক্যাশ অন ডেলিভারি", ar: "بيكاش/نقد/روكيت/أوباي/باثاو/بطاقة/الدفع عند الاستلام" },
+
   // ---------- AI error mappings (localized) ----------
   errors_ai_rate_limit:{ en: "Too many requests right now. Please try again in a moment.", bn: "এই মুহূর্তে অনেক বেশি অনুরোধ হচ্ছে। একটু পরে আবার চেষ্টা করুন।", ar: "هناك عدد كبير من الطلبات حاليًا. يرجى المحاولة مرة أخرى بعد قليل." },
   errors_ai_unavailable:{ en: "The AI assistant is temporarily unavailable. Please try again later.", bn: "এআই সহায়কটি সাময়িকভাবে অনুপলব্ধ। অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন।", ar: "المساعد الذكي غير متاح مؤقتًا. يرجى المحاولة مرة أخرى لاحقًا." },
@@ -703,9 +729,35 @@ const dict = {
  * Translate a key with optional {placeholder} interpolation.
  * Falls back to English, then to the key itself, so a missing entry can never
  * break a page render.
+ *
+ * Missing keys and missing locales are reported once each in development so
+ * future untranslated content is detectable instead of silently English.
  */
+const warnedMessages = new Set();
+
+function warnOnce(message) {
+  if (process.env.NODE_ENV === "production") return;
+  if (warnedMessages.has(message)) return;
+  warnedMessages.add(message);
+  console.warn(`⚠️  i18n: ${message}`);
+}
+
+/** Every key/locale that had to fall back, since the last reset (dev tooling). */
+export function i18nWarnings() {
+  return [...warnedMessages];
+}
+
+export function resetI18nWarnings() {
+  warnedMessages.clear();
+}
+
 export function translate(lang, key, vars = {}) {
   const entry = dict[key];
+  if (!entry) {
+    warnOnce(`unknown translation key "${key}" — it will render as-is`);
+  } else if (lang !== DEFAULT_LANG && typeof entry[lang] !== "string") {
+    warnOnce(`key "${key}" has no ${lang} text — falling back to English`);
+  }
   let out = entry ? (entry[lang] ?? entry.en ?? key) : key;
   if (typeof out !== "string") out = String(out ?? key);
   for (const [k, v] of Object.entries(vars)) {

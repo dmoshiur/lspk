@@ -1,6 +1,7 @@
 <%
   const _t2 = (typeof t === 'function') ? t : (k) => k;
-  const _esc2 = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const fmtDate = (v) => { try { return new Date(String(v).includes('T') ? v : String(v).replace(' ','T') + 'Z').toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e){ return String(v||'').slice(0,16); } };
   const rq = (typeof requests !== 'undefined' && requests) ? requests : { ok: false, list: [] };
 %>
@@ -36,10 +37,10 @@
                     <span class="badge bg-danger rounded-pill" style="font-size:.9rem;"><%= r.blood_group %><%= r.quantity ? ' • ' + r.quantity : '' %></span>
                     <% if (r.is_urgent) { %><span class="badge bg-warning text-dark rounded-pill"><i class="fas fa-bolt me-1"></i><%= _t2('st_urgent') %></span><% } %>
                   </div>
-                  <h6 class="fw-bold mb-1"><%= _esc2(r.patient_name) %> <small class="text-muted">(<%= _esc2(r.patient_relation ? _t2('req_' + r.patient_relation.toLowerCase(), {}) || r.patient_relation : _t2('req_self')) %>)</small></h6>
+                  <h6 class="fw-bold mb-1"><%= r.patient_name %> <small class="text-muted">(<%= r.patient_relation ? _t2('req_' + r.patient_relation.toLowerCase(), {}) || r.patient_relation : _t2('req_self') %>)</small></h6>
                   <div class="small text-muted d-grid gap-1">
-                    <div><i class="fas fa-hospital me-2 text-danger"></i><%= _esc2(r.hospital_name) %></div>
-                    <div><i class="fas fa-map-marker-alt me-2 text-danger"></i><%= _esc2([r.location_upazila, r.location_district, r.location_division].filter(Boolean).join(', ') %></div>
+                    <div><i class="fas fa-hospital me-2 text-danger"></i><%= r.hospital_name %></div>
+                    <div><i class="fas fa-map-marker-alt me-2 text-danger"></i><%= [r.location_upazila, r.location_district, r.location_division].filter(Boolean).join(', ') %></div>
                     <div><i class="fas fa-clock me-2 text-danger"></i><%= _t2('req_needed') %>: <%= fmtDate(r.needed_by) %></div>
                     <div><i class="fas fa-calendar me-2 text-danger"></i><%= fmtDate(r.created_at) %></div>
                   </div>

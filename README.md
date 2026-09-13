@@ -100,6 +100,46 @@ The reference pages (`/antid`, `/compatibility`, `/resources`, `/api/routes`)
 fall back to the built-in content in `src/utils/content.js` when the API is
 unreachable, so they never render empty.
 
+## 🌐 Localization (en / বাংলা / العربية)
+
+Two layers, both resolved **server-side before the template renders** — no
+runtime machine translation, no extra requests:
+
+| Layer | File | Holds |
+|-------|------|-------|
+| UI strings | `src/i18n.js` | navbar, buttons, labels, forms, errors, empty/loading states |
+| Page content | `src/utils/content.js` | the Anti-D / Compatibility / Resources reference material |
+
+Every human-readable string in `content.js` is stored as a translation record
+`L("English", "বাংলা", "العربية")`. `src/utils/localize.js` resolves a whole
+reference to the visitor's locale:
+
+```js
+localizeReference(apiPayload, bundledReference, lang)   // -> one language, plain text
+```
+
+- A `{ en, bn, ar }` value from the backend/CMS is honoured directly.
+- A plain English string that matches a known source string is translated
+  through the bundled record, so **CMS content served in English still renders
+  in the visitor's language**.
+- Genuinely new, never-translated CMS text is kept as authored and reported by
+  a development-time warning (`missingTranslations()`), never silently dropped.
+- Fallback is locale → English → source text; a raw key is never shown.
+- Text is entity-decoded once (`decodeEntities`) and printed with EJS
+  `<%= %>`, which escapes exactly once. Never `<%- %>` / `dangerouslySetInnerHTML`.
+
+Deliberately **not** translated: blood-group symbols (`O−`, `AB+` — also parsed
+by the compatibility matrix), doses and units (`1500 IU (300 mcg) IM`), product
+and test names (`Rhophylac`, `Kleihauer-Betke`), and the official titles of
+published guidelines.
+
+Arabic sets `dir="rtl"` on `<html>` and swaps in the Bootstrap RTL build.
+The choice persists in the `lang` cookie + session, so it survives refresh,
+navigation and login/logout.
+
+**Rule for views:** print text with `<%= %>`. Do not add a local HTML escaper —
+that double-escapes and leaks a literal `&#39;` onto the page.
+
 ## 🔐 Auth model
 
 - The backend issues **JWTs** on register/login (7-day expiry) bound to a DB
@@ -125,17 +165,20 @@ unreachable, so they never render empty.
 ├── public/                # Static assets (logo, favicon)
 ├── src/
 │   ├── api.js             # API client → BACKEND_URL
-│   ├── i18n.js            # en / bn / ar strings
+│   ├── i18n.js            # en / bn / ar UI strings (+ dev warnings for gaps)
 │   ├── middleware/
 │   │   ├── auth.js        # Session/JWT bridge (loadUser, requireAdmin, …)
 │   │   ├── cookieStore.js # Stateless signed-cookie session store
 │   │   └── site.js        # Language + branding context
 │   ├── routes/            # Frontend page routes (all data via the API)
 │   └── utils/
-│       ├── content.js     # Built-in reference content (offline fallback)
+│       ├── content.js     # Built-in reference content (en/bn/ar records)
+│       ├── localize.js    # Resolves content to the active locale + entity decoding
 │       └── locations.js   # Bangladesh geo data (register fallback)
 └── test/
-    └── deploy.test.mjs    # Guards the Vercel handler export + session store
+    ├── deploy.test.mjs        # Guards the Vercel handler export + session store
+    ├── frontend.test.mjs      # AI/chat/i18n/template + page pipeline guards
+    └── i18n-content.test.mjs  # Localized content, entity escaping, RTL guards
 ```
 
 ## ⚠️ Production notes

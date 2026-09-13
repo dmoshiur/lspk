@@ -1,7 +1,8 @@
 <%- include('../partials/header') %>
 <%
   const _t2 = (typeof t === 'function') ? t : (k) => k;
-  const _esc2 = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const _num = (n) => { if (lang !== 'bn') return String(n); const b=['০','১','২','৩','৪','৫','৬','৭','৮','৯']; return String(n).replace(/\d/g,d=>b[d]); };
   const fmtDate = (v) => { try { return new Date(String(v).includes('T') ? v : String(v).replace(' ','T') + 'Z').toLocaleDateString(); } catch(e){ return String(v||'').slice(0,10); } };
   const isSuper = !!(typeof currentUser !== 'undefined' && currentUser && currentUser.is_super_admin);
@@ -63,7 +64,7 @@
               </tr></thead>
               <tbody>
                 <% all_users.forEach(function(u){ %>
-                  <tr data-search="<%= _esc2((u.name + ' ' + u.email + ' ' + (u.phone||'') + ' ' + (u.blood_group||'')).toLowerCase()) %>"
+                  <tr data-search="<%= (u.name + ' ' + u.email + ' ' + (u.phone||'') + ' ' + (u.blood_group||'')).toLowerCase() %>"
                       data-role="<%= u.is_super_admin ? 'super' : u.is_admin ? 'admin' : 'user' %>"
                       data-verified="<%= u.is_verified ? '1' : '0' %>"
                       data-candonate="<%= u.can_donate ? '1' : '0' %>">
@@ -91,7 +92,7 @@
                           <% if(!u.is_super_admin && u.id!==currentUser.id){ %>
                             <% if(!u.is_admin){ %><a href="/admin/promote/<%= u.id %>" class="btn btn-sm btn-primary rounded-pill" title="<%= _t2('adm_promote') %>"><i class="fas fa-arrow-up"></i></a><% } else { %><a href="/admin/demote/<%= u.id %>" class="btn btn-sm btn-warning rounded-pill" title="<%= _t2('adm_demote') %>"><i class="fas fa-arrow-down"></i></a><% } %>
                             <form method="POST" action="/admin/impersonate/<%= u.id %>" class="d-inline"><button class="btn btn-sm btn-dark rounded-pill" title="<%= _t2('adm_impersonate') %>"><i class="fas fa-mask"></i></button></form>
-                            <a href="/admin/delete/<%= u.id %>" class="btn btn-sm btn-danger rounded-pill" onclick="return confirm('<%= _esc2(_t2('adm_confirm_delete')) %>')" title="<%= _t2('adm_delete_user') %>"><i class="fas fa-trash"></i></a>
+                            <a href="/admin/delete/<%= u.id %>" class="btn btn-sm btn-danger rounded-pill" onclick="return confirm('<%= _t2('adm_confirm_delete') %>')" title="<%= _t2('adm_delete_user') %>"><i class="fas fa-trash"></i></a>
                           <% } %>
                         <% } %>
                         <a href="/donors/profile/view/<%= u.id %>" class="btn btn-sm btn-light border rounded-pill" title="<%= _t2('common_view') %>"><i class="fas fa-eye"></i></a>

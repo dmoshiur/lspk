@@ -8,14 +8,14 @@ const router = express.Router();
 router.get("/", requireLogin, async (req, res) => {
   try {
     const d = await apiGet("/api/messages", req.session.token);
-    res.render("messages", { title: "Messages - BloodOra", received: d.received, sent: d.sent, unread_count: d.unread_count });
+    res.render("messages", { title: `${req.t("msg_title")} - ${res.locals.siteName}`, received: d.received, sent: d.sent, unread_count: d.unread_count });
   } catch (e) {
     console.error(e.message);
     res.redirect("/");
   }
 });
 
-router.get("/send", requireLogin, (req, res) => res.render("send_message", { title: "Send Message - BloodOra" }));
+router.get("/send", requireLogin, (req, res) => res.render("send_message", { title: `${req.t("page_msg_send")} - ${res.locals.siteName}` }));
 
 router.post("/send", requireLogin, async (req, res) => {
   try {
@@ -32,18 +32,18 @@ router.post("/send", requireLogin, async (req, res) => {
 router.get("/read/:id", requireLogin, async (req, res) => {
   try {
     const d = await apiGet(`/api/messages/${req.params.id}`, req.session.token);
-    res.render("read_message", { title: "Read Message - BloodOra", message: d.message });
+    res.render("read_message", { title: `${req.t("page_msg_read")} - ${res.locals.siteName}`, message: d.message });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
 router.get("/reply/:id", requireLogin, async (req, res) => {
   try {
     const d = await apiGet(`/api/messages/${req.params.id}/original`, req.session.token);
-    res.render("reply_message", { title: "Reply - BloodOra", original: d.original });
+    res.render("reply_message", { title: `${req.t("page_msg_reply")} - ${res.locals.siteName}`, original: d.original });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
@@ -73,7 +73,7 @@ router.get("/admin/message/reply/:id", requireAdmin, async (req, res) => {
     const d = await apiGet(`/api/messages/${req.params.id}/original`, req.session.token);
     res.render("admin/reply_message", { title: "Admin Reply", original: d.original });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 

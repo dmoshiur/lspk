@@ -13,10 +13,10 @@ router.get("/", async (req, res) => {
     const d = await apiGet("/api/donors", null, {
       bg: req.query.bg, dist: req.query.dist, upa: req.query.upa, age_min: req.query.age_min,
     });
-    res.render("donors", { title: "Donors - BloodOra", users: d.users, query: req.query });
+    res.render("donors", { title: `${req.t("don_title")} - ${res.locals.siteName}`, users: d.users, query: req.query });
   } catch (e) {
     console.error(e.message);
-    res.render("donors", { title: "Donors - BloodOra", users: [], query: {} });
+    res.render("donors", { title: `${req.t("don_title")} - ${res.locals.siteName}`, users: [], query: {} });
   }
 });
 
@@ -26,18 +26,18 @@ router.get("/profile/view/:id", async (req, res) => {
     const d = await apiGet(`/api/users/${req.params.id}`);
     res.render("profile_view", { title: d.user.name + " - Profile", user: d.user });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
 // My profile
 router.get("/profile/my", requireLogin, async (req, res) => {
-  res.render("my_profile", { title: "My Profile - BloodOra", user: req.user });
+  res.render("my_profile", { title: `${req.t("prof_title")} - ${res.locals.siteName}`, user: req.user });
 });
 
 // Edit profile
 router.get("/profile/edit", requireLogin, async (req, res) => {
-  res.render("edit_profile", { title: "Edit Profile - BloodOra", user: req.user });
+  res.render("edit_profile", { title: `${req.t("prof_edit")} - ${res.locals.siteName}`, user: req.user });
 });
 
 router.post("/profile/edit", requireLogin, upload.single("profile_pic"), async (req, res) => {

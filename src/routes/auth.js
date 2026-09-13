@@ -24,7 +24,7 @@ router.get("/register", async (req, res) => {
     const d = await apiGet("/api/meta/locations");
     if (d && d.bangladeshData && Object.keys(d.bangladeshData).length) bangladeshData = d.bangladeshData;
   } catch (e) { /* fallback to bundled static data */ }
-  res.render("register", { title: "Register - BloodOra", error: null, bangladeshData });
+  res.render("register", { title: `${req.t("nav_register")} - ${res.locals.siteName}`, error: null, bangladeshData });
 });
 
 // POST Register (multipart → forwarded to backend)
@@ -54,7 +54,7 @@ router.post("/register", upload.single("profile_pic"), async (req, res) => {
 // GET Login
 router.get("/login", (req, res) => {
   if (req.user) return res.redirect("/");
-  res.render("login", { title: "Login - BloodOra" });
+  res.render("login", { title: `${req.t("nav_login")} - ${res.locals.siteName}` });
 });
 
 // POST Login
