@@ -57,6 +57,39 @@ test("the session store is not the in-memory MemoryStore", async () => {
   assert.ok(!(store instanceof session.MemoryStore), "MemoryStore triggers a production warning and loses sessions on serverless");
 });
 
+test("this repository contains no backend source and no reference to it", async () => {
+  const fs = await import("fs");
+  // 1. the folder itself must be gone — lspk is the frontend, nothing else
+  assert.equal(fs.existsSync(path.join(root, "backend")), false, "backend/ must not exist in this repo");
+
+  // 2. no frontend file may reach into a backend source tree
+  const offenders = [];
+  const scan = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { scan(full); continue; }
+      if (!/\.(js|mjs|ejs|json)$/.test(entry.name)) continue;
+      const text = fs.readFileSync(full, "utf8");
+      if (/\.\.\/backend|\.\.\/\.\.\/backend|backend\/src\//.test(text)) offenders.push(path.relative(root, full));
+    }
+  };
+  scan(path.join(root, "src"));
+  scan(path.join(root, "views"));
+  for (const f of ["server.js", "vercel.json", "package.json"]) {
+    if (/\.\.\/backend|backend\/src\//.test(fs.readFileSync(path.join(root, f), "utf8"))) offenders.push(f);
+  }
+  assert.deepEqual(offenders, [], `these files still depend on the backend repo: ${offenders.join(", ")}`);
+});
+
+test("the built-in fallback content the frontend owns is complete", async () => {
+  const c = await import("../src/utils/content.js");
+  assert.ok(Object.keys(c.antidReference).length > 0, "antidReference must have content");
+  assert.ok(Object.keys(c.compatibilityReference).length > 0, "compatibilityReference must have content");
+  assert.ok(c.resourcesReference.length > 0, "resourcesReference must have entries");
+  assert.ok(c.siteRoutes.length > 0, "siteRoutes must have entries");
+});
+
 test("the session cookie survives a round trip and rejects tampering", async () => {
   const { CookieSessionStore, sessionContext } = await import("../src/middleware/cookieStore.js");
   const store = new CookieSessionStore({ secret: "round-trip-secret", secure: true });
