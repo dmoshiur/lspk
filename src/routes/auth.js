@@ -44,7 +44,7 @@ router.post("/register", upload.single("profile_pic"), async (req, res) => {
     const d = await apiPostForm("/api/auth/register", fd);
     setAuthSession(req, d.token, d.user);
     req.session.flash = { type: "success", message: d.message };
-    return res.redirect("/");
+    return res.redirect("/dashboard");
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Registration failed." };
     return res.redirect("/register");
@@ -63,9 +63,9 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     const d = await apiPost("/api/auth/login", { email, password });
     setAuthSession(req, d.token, d.user);
-    const next = req.query.next || "/";
+    const next = req.query.next || "/dashboard";
     req.session.flash = { type: "success", message: d.message || `👋 Welcome back, ${d.user.name}!` };
-    return res.redirect(next.startsWith("/") ? next : "/");
+    return res.redirect(next.startsWith("/") ? next : "/dashboard");
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Login error." };
     return res.redirect("/login");

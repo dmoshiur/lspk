@@ -1,11 +1,18 @@
 // ==================== Frontend Routes - Live AI Help proxy ====================
 // Same-origin proxy for the widget plus the admin configuration routes.
 import express from "express";
+import { createRequire } from "module";
 import { apiGet, apiPost } from "../api.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { invalidateBranding } from "../middleware/site.js";
 
 const router = express.Router();
+
+// Single source of truth for reasoning removal: the same UMD module the
+// browser loads (/js/chat-utils.js). Stripping here means internal reasoning
+// never even leaves this server — the client-side strip is defence-in-depth.
+const require = createRequire(import.meta.url);
+const { stripThink } = require("../../public/js/chat-utils.js");
 
 // GET /ai-help/config — safe public configuration for the widget
 router.get("/config", async (req, res) => {
@@ -22,6 +29,9 @@ router.post("/chat", async (req, res) => {
       language: req.body?.language || res.locals.lang || "en",
       user_id: req.user?.id || null,
     }, req.session.token || null);
+    // SECURITY: never forward model reasoning (<think>…</think>) to the
+    // browser — stripped from the string itself, not hidden with CSS.
+    if (d && typeof d.reply === "string") d.reply = stripThink(d.reply);
     res.json(d);
   } catch (e) {
     res.status(e.status && e.status >= 400 ? e.status : 502).json({

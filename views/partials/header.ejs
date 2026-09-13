@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@500;600;700&family=Baloo+Da+2:wght@500;600;700&family=Aref+Ruqaa:wght@400;700&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <% if (_dir === 'rtl') { %><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet"><% } else { %><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><% } %>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
 
   <style>
@@ -207,6 +207,17 @@
     .live-dot{ width:8px;height:8px;background:#fff;border-radius:50%;display:inline-block;margin-<%= _dir==='rtl'?'left':'right' %>:6px; animation:pulse 1.2s infinite; }
     @keyframes pulse{ 0%{opacity:1} 50%{opacity:.35} 100%{opacity:1} }
     .unread-pill{ position:absolute; top:-3px; <%= _dir==='rtl'?'left':'right' %>:-3px; background:#fbbf24; color:#0f172a; font-size:.62rem; font-weight:800; border-radius:999px; padding:.1rem .38rem; }
+    /* RTL: mirror directional icons so arrows/chevrons point the right way */
+    html[dir="rtl"] .fa-arrow-right, html[dir="rtl"] .fa-arrow-left,
+    html[dir="rtl"] .fa-chevron-right, html[dir="rtl"] .fa-chevron-left,
+    html[dir="rtl"] .fa-angle-right, html[dir="rtl"] .fa-angle-left,
+    html[dir="rtl"] .fa-caret-right, html[dir="rtl"] .fa-caret-left,
+    html[dir="rtl"] .fa-reply, html[dir="rtl"] .fa-sign-out-alt,
+    html[dir="rtl"] .fa-arrow-right-to-bracket, html[dir="rtl"] .fa-arrow-right-from-bracket{ transform:scaleX(-1); }
+    /* Skip link (a11y) */
+    .bo-skip{ position:absolute; <%= _dir==='rtl'?'right':'left' %>:-9999px; top:0; z-index:2000; background:#fff; color:var(--primary); padding:.6rem 1rem; border-radius:0 0 10px 0; font-weight:700; }
+    .bo-skip:focus{ <%= _dir==='rtl'?'right':'left' %>:0; }
+    :focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
     .activity-item{ display:flex; align-items:flex-start; gap:12px; padding:11px 12px; border-radius:14px; background:#fff; border:1px solid #e2e8f0; transition:all .2s; text-decoration:none; color:inherit; }
     .activity-item:hover{ border-color:color-mix(in srgb, <%= _p %> 30%, transparent); transform:translateY(-1px); box-shadow:var(--shadow); color:inherit; }
     .activity-icon{ width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:14px; }
@@ -225,8 +236,9 @@
   <% if (typeof extraCss !== 'undefined') { %><%- extraCss %><% } %>
 </head>
 <body>
+  <a class="bo-skip" href="#bo-main"><%= _t('common_skip') %></a>
   <!-- ================= Navbar ================= -->
-  <nav class="navbar navbar-expand-lg sticky-top">
+  <nav class="navbar navbar-expand-lg sticky-top" aria-label="<%= _t('nav_home') %>">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="/">
         <img src="<%= _logo %>" alt="<%= _name %>" onerror="this.style.display='none'">
@@ -235,7 +247,7 @@
           <% if (_tag) { %><span class="brand-tag d-none d-xl-inline"><%= _tag %></span><% } %>
         </span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="<%= _t('nav_menu') %>">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navMain">
@@ -289,21 +301,32 @@
           </li>
 
           <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+            <!-- Real notifications: unread message count from the backend -->
+            <li class="nav-item">
+              <a class="nav-link position-relative" href="/messages" aria-label="<%= _t('notif_title') %>">
+                <i class="fas fa-bell"></i><span class="d-none d-xl-inline"><%= _t('notif_title') %></span>
+                <span id="bo-unread-pill" class="badge bg-danger ms-1 d-none" aria-live="polite">0</span>
+              </a>
+            </li>
             <% if (currentUser.is_admin) { %><li class="nav-item"><a class="nav-link" href="/admin"><i class="fas fa-cog"></i><span class="d-none d-xl-inline"><%= _t('nav_admin') %></span></a></li><% } %>
-            <li class="nav-item"><a class="nav-link" href="/shop/my-orders"><i class="fas fa-box"></i><span class="d-none d-xl-inline"><%= _t('nav_my_orders') %></span></a></li>
+            <li class="nav-item"><a class="nav-link<%= isActive('/dashboard') %>" href="/dashboard"><i class="fas fa-gauge-high"></i><span class="d-none d-xl-inline"><%= _t('nav_dashboard') %></span></a></li>
+            <li class="nav-item"><a class="nav-link<%= isActive('/dashboard/orders') %>" href="/dashboard/orders"><i class="fas fa-box"></i><span class="d-none d-xl-inline"><%= _t('nav_my_orders') %></span></a></li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown" style="background:#fff; border:1px solid var(--border); border-radius:999px; padding:.35rem .9rem .35rem .45rem !important;">
+              <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff; border:1px solid var(--border); border-radius:999px; padding:.35rem .9rem .35rem .45rem !important;">
                 <% if (currentUser.image_file && currentUser.image_file !== 'default.jpg') { %>
-                  <img src="/uploads/<%= currentUser.image_file %>" alt="Profile" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                  <img src="/uploads/<%= currentUser.image_file %>" alt="<%= currentUser.name %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                 <% } else { %>
-                  <img src="https://ui-avatars.com/api/?background=<%= (_p||'#e31b23').replace('#','') %>&color=fff&name=<%= encodeURIComponent(currentUser.name) %>&size=64&bold=true" alt="Profile" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                  <img src="https://ui-avatars.com/api/?background=<%= (_p||'#e31b23').replace('#','') %>&color=fff&name=<%= encodeURIComponent(currentUser.name) %>&size=64&bold=true" alt="<%= currentUser.name %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                 <% } %>
                 <span class="d-none d-lg-inline fw-bold" style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= currentUser.name.split(' ')[0] %></span>
               </a>
               <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2" style="min-width:230px;">
+                <li><a class="dropdown-item rounded-3" href="/dashboard"><i class="fas fa-gauge-high me-2 text-danger"></i><%= _t('nav_dashboard') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/donors/profile/my"><i class="fas fa-user me-2 text-danger"></i><%= _t('nav_my_profile') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/messages"><i class="fas fa-envelope me-2 text-danger"></i><%= _t('nav_messages') %></a></li>
-                <li><a class="dropdown-item rounded-3" href="/reviews/mine"><i class="fas fa-star me-2 text-danger"></i><%= _t('rev_write') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/reviews/mine"><i class="fas fa-star me-2 text-danger"></i><%= _t('nav_my_reviews') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/requests"><i class="fas fa-tint me-2 text-danger"></i><%= _t('nav_my_requests') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/security"><i class="fas fa-shield-halved me-2 text-danger"></i><%= _t('nav_security') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/donors/profile/edit"><i class="fas fa-edit me-2 text-danger"></i><%= _t('nav_edit_profile') %></a></li>
                 <% if (!currentUser.is_verified && currentUser.age && currentUser.age>=18) { %>
                   <li><hr class="dropdown-divider"></li>
@@ -340,3 +363,5 @@
       </div>
     </div>
   <% } %>
+
+  <main id="bo-main">

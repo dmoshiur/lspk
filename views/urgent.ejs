@@ -1,6 +1,6 @@
 <%- include('partials/header') %>
 <div class="container mt-4">
-  <h2 class="fw-bold mb-4 text-danger"><i class="fas fa-bolt me-2"></i>Urgent Blood Requests</h2>
+  <h2 class="fw-bold mb-4 text-danger"><i class="fas fa-bolt me-2"></i><%= t('urgent_title') %></h2>
   <% if (urgent_requests && urgent_requests.length){ %>
     <div class="row g-3">
       <% urgent_requests.forEach(r=>{ %>
@@ -22,7 +22,7 @@
   <% } %>
 
   <div class="card border-0 shadow-sm mt-4" style="border-radius:18px;">
-    <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-headset me-2 text-danger"></i>Quick Contact Admin</h5></div>
+    <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-headset me-2 text-danger"></i><%= t('urgent_contact') %></h5></div>
     <div class="card-body px-4">
       <form method="POST" action="/urgent-contact" class="row g-3">
         <div class="col-md-6"><input name="email" class="form-control" placeholder="Your email (optional)"></div>

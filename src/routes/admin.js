@@ -13,18 +13,56 @@ function flashFrom(req, d, fallback) {
   req.session.flash = { type: d.type || "success", message: d.message || fallback };
 }
 
+// GET /api/admin/dashboard is the source of truth; the extra panels are each
+// fetched independently (allSettled) so one slow/broken endpoint degrades its
+// own card instead of blanking the dashboard. Nothing shown is fabricated.
 router.get("/", requireAdmin, async (req, res) => {
+  const token = req.session.token;
   try {
-    const d = await apiGet("/api/admin/dashboard", req.session.token);
+    const [d, ordersR, activityR, supportR, messagesR] = await Promise.all([
+      apiGet("/api/admin/dashboard", token),
+      apiGet("/api/admin/orders", token).catch((e) => ({ __err: e })),
+      apiGet("/api/admin/activity", token).catch((e) => ({ __err: e })),
+      apiGet("/api/support/admin/sessions", token).catch((e) => ({ __err: e })),
+      apiGet("/api/messages/admin/list", token).catch((e) => ({ __err: e })),
+    ]);
+    const allUsers = d.all_users || [];
     res.render("admin/dashboard", {
-      title: "Admin Dashboard - BloodOra",
-      all_users: d.all_users, stats: d.stats,
+      title: `${req.t("adm_dashboard")} - ${res.locals.siteName}`,
+      all_users: allUsers, stats: d.stats,
       current_notice: d.current_notice, settings: d.settings, now: new Date(),
+      // real aggregates for the side panels:
+      recent_orders: ordersR.__err ? { ok: false, list: [] } : { ok: true, list: (ordersR.orders || []).slice(0, 5), revenue: (ordersR.orders || []).reduce((s, o) => s + (Number(o.total_amount) || 0), 0), paid: (ordersR.orders || []).filter((o) => String(o.payment_status || "").toLowerCase() === "confirmed").length },
+      activity: activityR.__err ? { ok: false, list: [] } : { ok: true, list: (activityR.events || []).slice(0, 8) },
+      support: supportR.__err ? { ok: false, sessions: [], unread: 0 } : { ok: true, sessions: (supportR.sessions || []).slice(0, 5), unread: supportR.unread_total || 0 },
+      admin_messages: messagesR.__err ? { ok: false, unread: 0 } : { ok: true, unread: messagesR.unread || 0 },
+      // recent registrations: real users sorted by created_at (API order)
+      recent_registrations: allUsers.slice(0, 5),
     });
   } catch (e) {
     console.error(e.message);
     req.session.flash = { type: "danger", message: "❌ Dashboard failed to load." };
     res.redirect("/");
+  }
+});
+
+// ============================================================================
+//  User management  (/admin/users)  — dedicated page: search, filters,
+//  pagination (client-side over the real all_users payload from the API),
+//  role-aware actions. Backend remains the security authority: edit/promote/
+//  demote/delete/impersonate are super-admin-only endpoints, and the UI only
+//  exposes them to super admins.
+// ============================================================================
+router.get("/users", requireAdmin, async (req, res) => {
+  try {
+    const d = await apiGet("/api/admin/dashboard", req.session.token);
+    res.render("admin/users", {
+      title: `${req.t("adm_users")} - ${res.locals.siteName}`,
+      all_users: d.all_users || [], stats: d.stats,
+    });
+  } catch (e) {
+    req.session.flash = { type: "danger", message: e.message || "❌ Could not load users." };
+    res.redirect("/admin");
   }
 });
 
@@ -55,7 +93,7 @@ router.post("/verify-donor/:id", requireAdmin, async (req, res) => {
   } catch (e) {
     req.session.flash = { type: e.type || "warning", message: e.message || "⚠️ Could not verify user." };
   }
-  res.redirect("/admin");
+  res.redirect(req.get("Referer") || "/admin/users");
 });
 
 router.get("/promote/:id", requireAdmin, async (req, res) => {
@@ -65,7 +103,7 @@ router.get("/promote/:id", requireAdmin, async (req, res) => {
   } catch (e) {
     req.session.flash = { type: e.status === 403 ? "warning" : "danger", message: e.message || "⚠️ Only Super Admin can promote." };
   }
-  res.redirect("/admin");
+  res.redirect(req.get("Referer") || "/admin/users");
 });
 
 router.get("/demote/:id", requireAdmin, async (req, res) => {
@@ -75,7 +113,7 @@ router.get("/demote/:id", requireAdmin, async (req, res) => {
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Unauthorized." };
   }
-  res.redirect("/admin");
+  res.redirect(req.get("Referer") || "/admin/users");
 });
 
 router.get("/delete/:id", requireAdmin, async (req, res) => {
@@ -85,7 +123,7 @@ router.get("/delete/:id", requireAdmin, async (req, res) => {
   } catch (e) {
     req.session.flash = { type: e.type || "danger", message: e.message || "❌ Unauthorized." };
   }
-  res.redirect("/admin");
+  res.redirect(req.get("Referer") || "/admin/users");
 });
 
 router.post("/notice", requireAdmin, async (req, res) => {
@@ -111,19 +149,31 @@ router.get("/notice/clear", requireAdmin, async (req, res) => {
 // Super admin user management
 router.post("/user/update/:id", requireAdmin, async (req, res) => {
   const wantsJson = req.headers["x-requested-with"] === "XMLHttpRequest";
+  // The backend enforces super-admin for user updates; mirror it in the UI so
+  // admins get a clear message instead of a silent 403 (frontend UX only —
+  // the API remains the security authority).
+  if (!req.user?.is_super_admin) {
+    const msg = "⚠️ " + (req.t ? req.t("adm_super_only") : "Super Admin only.");
+    if (wantsJson) return res.status(403).json({ success: false, error: msg });
+    req.session.flash = { type: "warning", message: msg };
+    return res.redirect("/admin/users");
+  }
   try {
     const d = await apiPost(`/api/admin/user/update/${req.params.id}`, req.body, req.session.token);
     if (wantsJson) return res.json({ success: true });
     flashFrom(req, d);
-    res.redirect("/admin");
+    res.redirect("/admin/users");
   } catch (e) {
     if (wantsJson) return res.status(e.status || 400).json({ success: false, error: e.message });
     req.session.flash = { type: e.type || "danger", message: e.message || "❌ Failed to update." };
-    res.redirect("/admin");
+    res.redirect("/admin/users");
   }
 });
 
 router.get("/user/details/:id", requireAdmin, async (req, res) => {
+  if (!req.user?.is_super_admin) {
+    return res.status(403).json({ error: req.t ? req.t("adm_super_only") : "Super Admin only." });
+  }
   try {
     const d = await apiGet(`/api/admin/user/details/${req.params.id}`, req.session.token);
     res.json(d.user);
@@ -134,6 +184,10 @@ router.get("/user/details/:id", requireAdmin, async (req, res) => {
 
 // Impersonation: keep the admin's own token in the session so we can switch back.
 router.post("/impersonate/:id", requireAdmin, async (req, res) => {
+  if (!req.user?.is_super_admin) {
+    req.session.flash = { type: "warning", message: "⚠️ " + req.t("adm_super_only") };
+    return res.redirect("/admin/users");
+  }
   try {
     const d = await apiPost(`/api/admin/impersonate/${req.params.id}`, {}, req.session.token);
     req.session.original_admin_id = req.user.id;
@@ -176,13 +230,17 @@ router.get("/switch-back", requireAdmin, (req, res) => switchBack(req, res));
 router.get("/profile/switch-back", (req, res) => switchBack(req, res));
 
 router.post("/create-admin", requireAdmin, async (req, res) => {
+  if (!req.user?.is_super_admin) {
+    req.session.flash = { type: "warning", message: "⚠️ " + req.t("adm_super_only") };
+    return res.redirect("/admin/users");
+  }
   try {
     const d = await apiPost("/api/admin/create-admin", req.body, req.session.token);
     flashFrom(req, d);
   } catch (e) {
     req.session.flash = { type: e.type || "danger", message: e.message || "❌ Unauthorized." };
   }
-  res.redirect("/admin");
+  res.redirect("/admin/users");
 });
 
 router.get("/backup-database", requireAdmin, async (req, res) => {

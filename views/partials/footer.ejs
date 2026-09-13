@@ -11,6 +11,8 @@
   const _chatOn  = _b.live_chat_enabled !== false;
   const _isLogged = (typeof currentUser !== 'undefined' && currentUser);
 %>
+  </main>
+
   <!-- ================= Footer ================= -->
   <footer class="footer">
     <div class="container">
@@ -147,6 +149,10 @@
   </div>
 
   <!-- ================================================================= -->
+  <!-- Shared utilities: stripThink (AI reasoning removal) + the id-keyed -->
+  <!-- message store that makes live-chat deduplication exact. Same file  -->
+  <!-- is exercised by the Node test-suite (test/frontend.test.mjs).      -->
+  <script src="/js/chat-utils.js"></script>
   <script>
   (function(){
     var LANG = <%- JSON.stringify(_lang) %>;
@@ -155,8 +161,22 @@
       you: <%- JSON.stringify(_t('chat_you')) %>,
       support: <%- JSON.stringify(_t('chat_support')) %>,
       offline: <%- JSON.stringify(_t('chat_offline')) %>,
-      loading: <%- JSON.stringify(_t('common_loading')) %>
+      loading: <%- JSON.stringify(_t('common_loading')) %>,
+      sending: <%- JSON.stringify(_t('chat_sending')) %>,
+      failed: <%- JSON.stringify(_t('chat_failed')) %>,
+      retry: <%- JSON.stringify(_t('common_retry')) %>,
+      copy: <%- JSON.stringify(_t('chat_copy')) %>,
+      copied: <%- JSON.stringify(_t('chat_copied')) %>,
+      stopped: <%- JSON.stringify(_t('chat_stopped')) %>,
+      newConv: <%- JSON.stringify(_t('chat_new')) %>,
+      greeting: <%- JSON.stringify(_t('chat_ai_greeting')) %>,
+      connected: <%- JSON.stringify(_t('chat_connected')) %>,
+      connFail: <%- JSON.stringify(_t('chat_conn_fail')) %>,
+      closed: <%- JSON.stringify(_t('chat_closed')) %>,
+      online: <%- JSON.stringify(_t('chat_online')) %>
     };
+    var stripThink = (window.BOSanitize && window.BOSanitize.stripThink) || function(t){ return t; };
+    var createMessageStore = (window.BOSanitize && window.BOSanitize.createMessageStore) || function(){ var seen={}; return { accept:function(m){ if(!m) return false; if(m.id==null) return true; if(seen[m.id]) return false; seen[m.id]=1; return true; }, lastId:function(){ return 0; }, reset:function(){ seen={}; } }; };
 
     // ---- tiny markdown renderer: links + bold + line breaks, HTML-escaped first ----
     function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
@@ -170,6 +190,13 @@
       out = out.replace(/\n/g, '<br>');
       return out;
     }
+    // AI answers: reasoning is stripped from the RAW text first (never CSS-hidden),
+    // then escaped+rendered. If nothing remains, show a retryable notice.
+    function mdAi(text){
+      var clean = stripThink(text);
+      if (!clean) clean = '⚠️ ' + I18N.offline;
+      return md(clean);
+    }
     function bubble(cls, html){
       var d = document.createElement('div');
       d.className = 'chat-bubble ' + cls;
@@ -182,13 +209,41 @@
     }
 
     /* ============================== LIVE AI HELP ============================== */
-    var aiState = { conv: null, busy: false, prompts: [] };
+    var aiState = { conv: null, busy: false, prompts: [], lastMessage: null, controller: null };
     var aiPanel = document.getElementById('bo-ai-panel');
     var aiBody  = document.getElementById('bo-ai-body');
     var aiInput = document.getElementById('bo-ai-input');
 
-    function aiSay(text, cls){ if (aiBody) aiBody.appendChild(bubble(cls || 'msg-bot', md(text))); aiScroll(); }
+    function aiSay(text, cls){ if (aiBody) aiBody.appendChild(bubble(cls || 'msg-bot', cls === 'msg-bot' ? mdAi(text) : md(text))); aiScroll(); }
     function aiScroll(){ if (aiPanel) { var b = aiPanel.querySelector('.widget-body'); if (b) b.scrollTop = b.scrollHeight; } }
+
+    // An AI answer bubble with copy + retry affordances (real actions, no fakes).
+    function aiAnswer(text){
+      if (!aiBody) return;
+      var node = bubble('msg-bot', mdAi(text));
+      var bar = document.createElement('div');
+      bar.className = 'd-flex gap-2 mt-2';
+      bar.style.cssText = 'opacity:.75;';
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button'; copyBtn.className = 'btn btn-sm btn-light border';
+      copyBtn.style.cssText = 'border-radius:999px; font-size:.68rem; padding:.1rem .55rem;';
+      copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>' + esc(I18N.copy);
+      copyBtn.onclick = function(){
+        var clean = stripThink(text);
+        if (navigator.clipboard) navigator.clipboard.writeText(clean).catch(function(){});
+        copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>' + esc(I18N.copied);
+        setTimeout(function(){ copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>' + esc(I18N.copy); }, 1600);
+      };
+      var retryBtn = document.createElement('button');
+      retryBtn.type = 'button'; retryBtn.className = 'btn btn-sm btn-light border';
+      retryBtn.style.cssText = 'border-radius:999px; font-size:.68rem; padding:.1rem .55rem;';
+      retryBtn.innerHTML = '<i class="fas fa-rotate-right me-1"></i>' + esc(I18N.retry);
+      retryBtn.onclick = function(){ if (aiState.lastMessage && !aiState.busy) { aiInput.value = aiState.lastMessage; aiSend(); } };
+      bar.appendChild(copyBtn); bar.appendChild(retryBtn);
+      node.appendChild(bar);
+      aiBody.appendChild(node);
+      aiScroll();
+    }
 
     function aiTyping(on){
       var el = document.getElementById('bo-ai-typing');
@@ -213,58 +268,84 @@
       var text = (aiInput.value || '').trim();
       if (!text || aiState.busy) return;
       aiInput.value = '';
+      aiState.lastMessage = text;
       aiSay(text, 'msg-user');
       aiState.busy = true;
       aiTyping(true);
+      var sendBtn = document.getElementById('bo-ai-send');
+      if (sendBtn) { sendBtn.innerHTML = '<i class="fas fa-stop"></i>'; sendBtn.title = I18N.stopped; }
+      aiState.controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       fetch('/ai-help/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify({ message: text, conversation_id: aiState.conv, language: LANG })
+        body: JSON.stringify({ message: text, conversation_id: aiState.conv, language: LANG }),
+        signal: aiState.controller ? aiState.controller.signal : undefined
       })
       .then(function(r){ return r.json(); })
       .then(function(d){
         aiTyping(false);
         if (d.success) {
           aiState.conv = d.conversation_id || aiState.conv;
-          aiSay(d.reply, 'msg-bot');
+          aiAnswer(d.reply);
         } else {
           aiSay('⚠️ ' + (d.message || I18N.offline), 'msg-bot');
         }
       })
-      .catch(function(e){ aiTyping(false); aiSay('⚠️ ' + I18N.offline, 'msg-bot'); })
-      .finally(function(){ aiState.busy = false; });
+      .catch(function(e){
+        aiTyping(false);
+        if (e && e.name === 'AbortError') { aiSay('⏹ ' + I18N.stopped, 'msg-bot'); }
+        else { aiSay('⚠️ ' + I18N.offline, 'msg-bot'); }
+      })
+      .finally(function(){
+        aiState.busy = false;
+        aiState.controller = null;
+        if (sendBtn) { sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>'; sendBtn.title = ''; }
+      });
+    }
+
+    function aiSendOrStop(){
+      if (aiState.busy) { if (aiState.controller) aiState.controller.abort(); return; }
+      aiSend();
     }
 
     if (aiPanel) {
       document.getElementById('bo-ai-fab').onclick = function(){ aiPanel.classList.toggle('d-none'); if (!aiPanel.classList.contains('d-none')) aiInput.focus(); };
       document.getElementById('bo-ai-close').onclick = function(){ aiPanel.classList.add('d-none'); };
-      document.getElementById('bo-ai-send').onclick = aiSend;
-      aiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') aiSend(); });
+      document.getElementById('bo-ai-send').onclick = aiSendOrStop;
+      aiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); } });
       document.getElementById('bo-ai-reset').onclick = function(){
-        aiState.conv = null; aiBody.innerHTML = '';
-        aiSay('👋 ' + (LANG === 'bn' ? 'নতুন কথোপকথন শুরু হলো। কী জানতে চান?' : LANG === 'ar' ? 'بدأت محادثة جديدة. عمّا تسأل؟' : 'New conversation started. What would you like to know?'), 'msg-bot');
+        aiState.conv = null; aiState.lastMessage = null; aiBody.innerHTML = '';
+        aiSay('👋 ' + I18N.newConv, 'msg-bot');
         aiRenderChips();
       };
       var toChat = document.getElementById('bo-ai-to-chat');
-      if (toChat) toChat.onclick = function(e){ e.preventDefault(); aiPanel.classList.add('d-none'); document.getElementById('bo-chat-fab').click(); };
+      if (toChat) toChat.onclick = function(e){ e.preventDefault(); aiPanel.classList.add('d-none'); var f = document.getElementById('bo-chat-fab'); if (f) f.click(); };
       fetch('/ai-help/config').then(function(r){ return r.json(); }).then(function(d){
         if (d && d.enabled === false) { document.getElementById('bo-ai-fab').style.opacity = .45; }
         if (d && d.model) { document.getElementById('bo-ai-model').textContent = d.model; }
         aiState.prompts = (d && d.prompts) || [];
         aiRenderChips();
       }).catch(function(){});
-      aiSay(LANG === 'bn'
-        ? 'আসসালামু আলাইকুম! আমি BloodOra-এর এআই সহায়ক। পেজ, ফিচার, দাম, অ্যান্টি-ডি কিংবা রক্তের সামঞ্জস্যতা — যা খুশি জিজ্ঞাসা করুন।'
-        : LANG === 'ar'
-        ? 'السلام عليكم! أنا مساعد BloodOra الذكي. اسألني عن أي صفحة أو ميزة أو سعر أو عن مضاد D وتوافق فصائل الدم.'
-        : 'Assalamu alaikum! I am the BloodOra AI assistant. Ask me about any page, feature, price, Anti-D or blood compatibility.', 'msg-bot');
+      aiSay(I18N.greeting, 'msg-bot');
     }
 
-    /* ============================== LIVE MESSAGING ============================== */
+    /* ============================== LIVE MESSAGING ==============================
+     * Duplicate-message fix (root cause):
+     *   The old code rendered an optimistic bubble with NO id tracking, then
+     *   rendered the POST response message again — the `id <= lastId` guard
+     *   passed because lastId never advanced for the optimistic copy — and the
+     *   SSE stream could deliver it a third time.
+     *   Now every server message flows through ONE id-keyed store (accept()
+     *   returns true exactly once per id), and the optimistic bubble carries a
+     *   temp id that is REPLACED by the canonical message when the POST
+     *   responds. Order of arrival between POST response, SSE and polling no
+     *   longer matters: each id renders once, ever.
+     */
     var chatPanel = document.getElementById('bo-chat-panel');
     var chatBody  = document.getElementById('bo-chat-body');
     var chatInput = document.getElementById('bo-chat-input');
-    var chatState = { key: null, lastId: 0, stream: null, poll: null, opened: false, unread: 0 };
+    var chatStore = createMessageStore();
+    var chatState = { key: null, stream: null, poll: null, opened: false, unread: 0, tempSeq: 0 };
 
     function chatSay(html, cls){ if (chatBody) chatBody.appendChild(bubble(cls || 'msg-bot', html)); chatScroll(); }
     function chatScroll(){ if (chatPanel) { var b = chatPanel.querySelector('.widget-body'); if (b) b.scrollTop = b.scrollHeight; } }
@@ -278,17 +359,25 @@
       var pill = document.getElementById('bo-chat-unread');
       if (pill) pill.classList.add('d-none');
     }
+
+    // Render a SERVER message exactly once (POST response, SSE and polling all
+    // come through here). Returns the node when it rendered something.
     function renderMsg(m){
-      if (m.id && m.id <= chatState.lastId) return;
-      if (m.id) chatState.lastId = m.id;
+      if (!chatStore.accept(m)) return null;      // duplicate id -> ignore
       var mine = m.sender_type === 'visitor';
       var who  = mine ? I18N.you : (m.sender_name || I18N.support);
-      chatSay('<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(who) + ' · ' + stamp(m.created_at) + '</div>' + md(m.body), mine ? 'msg-user' : 'msg-bot');
+      var node = bubble(mine ? 'msg-user' : 'msg-bot',
+        '<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(who) + ' · ' + stamp(m.created_at) + '</div>' + md(m.body));
+      if (m.id != null) node.setAttribute('data-msg-id', m.id);
+      if (chatBody) chatBody.appendChild(node);
+      chatScroll();
       if (!mine && chatPanel && chatPanel.classList.contains('d-none')) bumpUnread();
+      return node;
     }
 
     function chatOpenStream(){
       if (!chatState.key || typeof EventSource === 'undefined') return;
+      if (chatState.stream) { try { chatState.stream.close(); } catch(e){} chatState.stream = null; } // exactly one subscription
       try {
         var es = new EventSource('/support/stream?session=' + encodeURIComponent(chatState.key));
         chatState.stream = es;
@@ -296,7 +385,7 @@
           try {
             var d = JSON.parse(ev.data);
             if (d.type === 'message' && d.message) renderMsg(d.message);
-            if (d.type === 'closed') chatSay('🔒 ' + (LANG==='bn'?'কথোপকথন বন্ধ করা হয়েছে।':'Conversation closed.'), 'msg-bot');
+            if (d.type === 'closed') chatSay('🔒 ' + I18N.closed, 'msg-bot');
           } catch(e){}
         });
         es.onerror = function(){ es.close(); chatState.stream = null; chatStartPolling(); };
@@ -306,7 +395,7 @@
       if (chatState.poll) return;
       chatState.poll = setInterval(function(){
         if (!chatState.key) return;
-        fetch('/support/messages?session=' + encodeURIComponent(chatState.key) + '&after=' + chatState.lastId)
+        fetch('/support/messages?session=' + encodeURIComponent(chatState.key) + '&after=' + chatStore.lastId())
           .then(function(r){ return r.json(); })
           .then(function(d){ (d.messages || []).forEach(renderMsg); })
           .catch(function(){});
@@ -325,17 +414,17 @@
       .then(function(r){ return r.json(); })
       .then(function(d){
         chatBody.innerHTML = '';
-        chatState.lastId = 0;
+        chatStore.reset();                          // fresh conversation window
         if (d.greeting) chatSay('<strong>' + esc(I18N.support) + '</strong><br>' + md(d.greeting), 'msg-bot');
         chatState.key = d.session_key;
         localStorage.setItem('bo_chat_key', chatState.key);
-        (d.messages || []).forEach(renderMsg);
-        document.getElementById('bo-chat-status').innerHTML = '<span class="live-dot"></span>' + (LANG==='bn'?'সংযুক্ত':'Connected');
+        (d.messages || []).forEach(renderMsg);      // history: deduped by id
+        document.getElementById('bo-chat-status').innerHTML = '<span class="live-dot"></span>' + esc(I18N.connected);
         chatOpenStream();
       })
       .catch(function(){
         chatBody.innerHTML = '';
-        chatSay('⚠️ ' + (LANG==='bn'?'সার্ভারে সংযোগ করা যাচ্ছে না। আবার চেষ্টা করুন।':'Could not reach the support server. Please try again.'), 'msg-bot');
+        chatSay('⚠️ ' + I18N.connFail, 'msg-bot');
         chatState.opened = false;
       });
     }
@@ -344,15 +433,53 @@
       var text = (chatInput.value || '').trim();
       if (!text) return;
       chatInput.value = '';
-      chatSay('<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(I18N.you) + '</div>' + md(text), 'msg-user');
+
+      // Optimistic bubble with a TEMP id (never compared by text).
+      var tempId = 'tmp-' + (++chatState.tempSeq) + '-' + Date.now();
+      var pending = bubble('msg-user',
+        '<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(I18N.you) + ' · ' + esc(I18N.sending) + '</div>' + md(text));
+      pending.setAttribute('data-temp-id', tempId);
+      pending.style.opacity = '.72';
+      if (chatBody) chatBody.appendChild(pending);
+      chatScroll();
+
+      function reconcile(serverMsg){
+        // The server accepted the message. If its id is new, upgrade the
+        // optimistic bubble in place (one node, now canonical). If the SSE or
+        // polling channel already rendered this id, drop the optimistic copy —
+        // exactly one canonical node either way.
+        if (serverMsg && chatStore.accept(serverMsg)) {
+          var mine = true;
+          pending.innerHTML = '<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(I18N.you) + ' · ' + stamp(serverMsg.created_at) + '</div>' + md(serverMsg.body);
+          pending.setAttribute('data-msg-id', serverMsg.id);
+        } else {
+          pending.remove();
+        }
+        pending.style.opacity = '';
+      }
+
       fetch('/support/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify({ session_key: chatState.key, body: text })
       })
       .then(function(r){ return r.json(); })
-      .then(function(d){ if (d.success && d.message) renderMsg(d.message); else if (d.message) chatSay('⚠️ ' + esc(d.message), 'msg-bot'); })
-      .catch(function(){ chatSay('⚠️ ' + (LANG==='bn'?'পাঠানো যায়নি।':'Message failed to send.'), 'msg-bot'); });
+      .then(function(d){
+        if (d && d.success && d.message) { reconcile(d.message); }
+        else {
+          pending.innerHTML = '<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(I18N.you) + '</div>' + md(text) +
+            '<div class="small mt-1"><i class="fas fa-triangle-exclamation me-1"></i>' + esc((d && d.message) || I18N.failed) + '</div>';
+          pending.style.opacity = '';
+        }
+      })
+      .catch(function(){
+        pending.innerHTML = '<div class="small fw-bold mb-1" style="opacity:.75;">' + esc(I18N.you) + '</div>' + md(text) +
+          '<div class="small mt-1"><i class="fas fa-triangle-exclamation me-1"></i>' + esc(I18N.failed) +
+          ' <button type="button" class="btn btn-sm btn-light border" style="border-radius:999px; font-size:.66rem; padding:0 .5rem;" data-bo-retry>' + esc(I18N.retry) + '</button></div>';
+        pending.style.opacity = '';
+        var rb = pending.querySelector('[data-bo-retry]');
+        if (rb) rb.onclick = function(){ pending.remove(); chatInput.value = text; chatSend(); };
+      });
     }
 
     if (chatPanel) {
@@ -362,13 +489,14 @@
       };
       document.getElementById('bo-chat-close').onclick = function(){ chatPanel.classList.add('d-none'); };
       document.getElementById('bo-chat-send').onclick = chatSend;
-      chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') chatSend(); });
+      chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); } });
       var toAi = document.getElementById('bo-chat-to-ai');
-      if (toAi) toAi.onclick = function(e){ e.preventDefault(); chatPanel.classList.add('d-none'); document.getElementById('bo-ai-fab').click(); };
-      // keep the unread badge accurate even when the panel is closed
+      if (toAi) toAi.onclick = function(e){ e.preventDefault(); chatPanel.classList.add('d-none'); var f = document.getElementById('bo-ai-fab'); if (f) f.click(); };
+      // keep the unread badge accurate even when the panel is closed (single
+      // interval; the id-keyed store makes its renders duplicate-proof)
       setInterval(function(){
         if (!chatState.key || !chatPanel.classList.contains('d-none')) return;
-        fetch('/support/messages?session=' + encodeURIComponent(chatState.key) + '&after=' + chatState.lastId)
+        fetch('/support/messages?session=' + encodeURIComponent(chatState.key) + '&after=' + chatStore.lastId())
           .then(function(r){ return r.json(); })
           .then(function(d){ (d.messages || []).forEach(renderMsg); })
           .catch(function(){});
@@ -391,6 +519,30 @@
         try { bootstrap.Alert.getOrCreateInstance(a).close(); } catch(e) { a.remove(); }
       });
     }, 4500);
+    // Notification bell: real unread count from the backend (logged-in only).
+    // Cached in sessionStorage so page-to-page navigation does not re-hit the
+    // API on every view; the messages page refreshes the cached value.
+    (function(){
+      var pill = document.getElementById('bo-unread-pill');
+      if (!pill) return; // not logged in
+      function paint(n){
+        n = Number(n) || 0;
+        if (n > 0) { pill.textContent = n > 99 ? '99+' : n; pill.classList.remove('d-none'); }
+        else { pill.classList.add('d-none'); }
+      }
+      try {
+        var cached = sessionStorage.getItem('bo_unread');
+        if (cached !== null) paint(cached);
+      } catch(e){}
+      fetch('/api/notifications/unread', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){
+          if (!d || !d.success) return;
+          try { sessionStorage.setItem('bo_unread', d.unread); } catch(e){}
+          paint(d.unread);
+        })
+        .catch(function(){});
+    })();
   </script>
 </body>
 </html>

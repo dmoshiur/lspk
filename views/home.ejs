@@ -22,8 +22,8 @@
           <a href="/shop" class="btn btn-dark btn-lg" style="background:rgba(15,23,42,.95); border:none; box-shadow:0 10px 28px rgba(0,0,0,.2);"><i class="fas fa-shopping-bag me-2"></i><%= _t('home_cta_shop') %></a>
         </div>
         <div class="d-flex flex-wrap gap-3 mt-4 small" style="color:rgba(255,255,255,.92);">
-          <span><i class="fas fa-check-circle me-1"></i>64 Districts</span>
-          <span><i class="fas fa-check-circle me-1"></i>8 Blood Groups</span>
+          <span><i class="fas fa-check-circle me-1"></i><%= _t('home_64d') %></span>
+          <span><i class="fas fa-check-circle me-1"></i><%= _t('home_8bg') %></span>
           <span><i class="fas fa-check-circle me-1"></i><%= _t('home_verified') %></span>
         </div>
       </div>
@@ -66,7 +66,7 @@
 <div class="container mb-4">
   <div class="alert alert-danger border-0 d-flex align-items-center gap-3" style="background:linear-gradient(135deg,#fff0f0,#ffe4e6); color:#9f1239; font-weight:700;">
     <span class="d-inline-flex align-items-center justify-content-center" style="width:42px;height:42px;border-radius:50%; background:var(--primary); color:#fff; flex-shrink:0;"><i class="fas fa-bullhorn"></i></span>
-    <div>Notice: <%= notice.content %></div>
+    <div><%= _t('home_notice') %>: <%= notice.content %></div>
   </div>
 </div>
 <% } %>
@@ -107,14 +107,14 @@
 <!-- ================= How it works ================= -->
 <section class="container mb-5">
   <div class="text-center mb-4">
-    <div class="eyebrow mb-2">How it works</div>
+    <div class="eyebrow mb-2"><%= _t('home_how_eyebrow') %></div>
     <h2 class="mb-0"><i class="fas fa-cogs me-2 text-danger"></i><%= _t('home_how') %></h2>
   </div>
   <div class="row g-3">
-    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">1</div><h5 class="fw-bold"><%= lang==='bn'?'নিবন্ধন':lang==='ar'?'التسجيل':'Register' %></h5><p class="small text-muted mb-0"><%= lang==='bn'?'প্রোফাইল তৈরি করুন। দাতাদের বয়স ১৮+ হতে হবে।':lang==='ar'?'أنشئ ملفك. يجب أن يكون عمر المتبرع 18 عامًا أو أكثر.':'Create your profile. Donors must be 18+.' %></p></div></div>
-    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">2</div><h5 class="fw-bold"><%= lang==='bn'?'ভেরিফিকেশন':lang==='ar'?'التوثيق':'Get Verified' %></h5><p class="small text-muted mb-0"><%= lang==='bn'?'নিরাপত্তার জন্য অ্যাডমিন দাতাদের যাচাই করেন।':lang==='ar'?'يتحقق المشرف من المتبرعين لضمان السلامة.':'Admin verifies donors for safety.' %></p></div></div>
-    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">3</div><h5 class="fw-bold"><%= lang==='bn'?'খুঁজুন / আবেদন':lang==='ar'?'ابحث / اطلب':'Find / Request' %></h5><p class="small text-muted mb-0"><%= lang==='bn'?'দাতা খুঁজুন বা সঙ্গে সঙ্গে রক্তের আবেদন করুন।':lang==='ar'?'ابحث عن متبرعين أو انشر طلبًا فورًا.':'Search donors or request blood instantly.' %></p></div></div>
-    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">4</div><h5 class="fw-bold"><%= lang==='bn'?'জীবন বাঁচান':lang==='ar'?'أنقذ حياة':'Save Lives' %></h5><p class="small text-muted mb-0"><%= lang==='bn'?'যোগাযোগ করুন, দান করুন, পার্থক্য গড়ে দিন।':lang==='ar'?'تواصل، تبرّع، وأحدث فرقًا.':'Connect, donate, and make a difference.' %></p></div></div>
+    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">1</div><h5 class="fw-bold"><%= _t('home_step1_t') %></h5><p class="small text-muted mb-0"><%= _t('home_step1_d') %></p></div></div>
+    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">2</div><h5 class="fw-bold"><%= _t('home_step2_t') %></h5><p class="small text-muted mb-0"><%= _t('home_step2_d') %></p></div></div>
+    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">3</div><h5 class="fw-bold"><%= _t('home_step3_t') %></h5><p class="small text-muted mb-0"><%= _t('home_step3_d') %></p></div></div>
+    <div class="col-6 col-md-3"><div class="process-step"><div class="step-number">4</div><h5 class="fw-bold"><%= _t('home_step4_t') %></h5><p class="small text-muted mb-0"><%= _t('home_step4_d') %></p></div></div>
   </div>
 </section>
 
@@ -142,7 +142,7 @@
         </div>
       <% }) %>
     <% } else { %>
-      <div class="col-12"><div class="alert alert-info text-center border-0 shadow-sm rounded-4"><%= lang==='bn'?'প্রথম যাচাইকৃত দাতা হন!':lang==='ar'?'كن أول متبرع موثّق!':'Be the first verified donor!' %> <a href="/register" class="alert-link"><%= _t('nav_register') %></a></div></div>
+      <div class="col-12"><div class="alert alert-info text-center border-0 shadow-sm rounded-4"><%= _t('home_first_donor') %> <a href="/register" class="alert-link"><%= _t('nav_register') %></a></div></div>
     <% } %>
   </div>
 </section>

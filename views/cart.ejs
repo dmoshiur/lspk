@@ -1,6 +1,6 @@
 <%- include('partials/header') %>
 <div class="container mt-4">
-  <h2 class="fw-bold mb-4"><i class="fas fa-shopping-cart text-danger me-2"></i>Your Cart</h2>
+  <h2 class="fw-bold mb-4"><i class="fas fa-shopping-cart text-danger me-2"></i><%= t('shop_cart_title') %></h2>
   <% if (cart_items && cart_items.length) { %>
     <div class="row g-4">
       <div class="col-lg-8">
@@ -12,14 +12,14 @@
                 <div class="flex-grow-1">
                   <div class="fw-bold" style="font-size:.95rem;"><%= item.product.name %></div>
                   <div class="small text-muted">৳<%= item.product.price %> × <%= item.quantity %></div>
-                  <div class="small fw-bold" style="color:var(--primary);">Subtotal: ৳<%= item.subtotal %></div>
+                  <div class="small fw-bold" style="color:var(--primary);"><%= t('shop_subtotal') %>: ৳<%= item.subtotal %></div>
                 </div>
                 <div style="min-width:150px;">
                   <form action="/shop/cart/update/<%= item.product.id %>" method="POST" class="d-flex gap-1">
                     <input type="number" name="quantity" value="<%= item.quantity %>" min="1" max="<%= item.product.stock %>" class="form-control form-control-sm" style="border-radius:12px;">
                     <button class="btn btn-sm btn-outline-danger" style="border-radius:12px;"><i class="fas fa-check"></i></button>
                   </form>
-                  <form action="/shop/cart/remove/<%= item.product.id %>" method="POST" class="mt-2"><button class="btn btn-sm btn-light border w-100 rounded-pill"><i class="fas fa-trash me-1 text-danger"></i>Remove</button></form>
+                  <form action="/shop/cart/remove/<%= item.product.id %>" method="POST" class="mt-2"><button class="btn btn-sm btn-light border w-100 rounded-pill"><i class="fas fa-trash me-1 text-danger"></i><%= t('common_delete') %></button></form>
                 </div>
               </div>
             <% }) %>
@@ -29,19 +29,19 @@
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm sticky-top" style="border-radius:18px; top:84px;">
           <div class="card-body p-4">
-            <h5 class="fw-bold"><i class="fas fa-receipt me-2 text-danger"></i>Summary</h5>
-            <div class="d-flex justify-content-between"><span>Items</span><strong><%= cart_items.length %></strong></div>
-            <div class="d-flex justify-content-between"><span>Subtotal</span><strong>৳<%= total %></strong></div>
+            <h5 class="fw-bold"><i class="fas fa-receipt me-2 text-danger"></i><%= t('common_total') %></h5>
+            <div class="d-flex justify-content-between"><span><%= t('common_quantity') %></span><strong><%= cart_items.length %></strong></div>
+            <div class="d-flex justify-content-between"><span><%= t('shop_subtotal') %></span><strong>৳<%= total %></strong></div>
             <hr>
-            <div class="d-flex justify-content-between"><span>Total</span><strong class="h5" style="color:var(--primary);">৳<%= total %></strong></div>
-            <a href="/shop/checkout" class="btn btn-danger w-100 btn-lg mt-3">Proceed to Checkout</a>
-            <a href="/shop" class="btn btn-light border w-100 mt-2 rounded-pill">Continue Shopping</a>
+            <div class="d-flex justify-content-between"><span><%= t('common_total') %></span><strong class="h5" style="color:var(--primary);">৳<%= total %></strong></div>
+            <a href="/shop/checkout" class="btn btn-danger w-100 btn-lg mt-3"><%= t('shop_checkout') %></a>
+            <a href="/shop" class="btn btn-light border w-100 mt-2 rounded-pill"><%= t('shop_continue') %></a>
           </div>
         </div>
       </div>
     </div>
   <% } else { %>
-    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;"><i class="fas fa-cart-shopping fa-3x mb-3" style="color:#94a3b8;"></i><h4>Your cart is empty</h4><a href="/shop" class="btn btn-danger rounded-pill mt-2">Go to Shop</a></div>
+    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;"><i class="fas fa-cart-shopping fa-3x mb-3" style="color:#94a3b8;"></i><h4><%= t('shop_cart_empty') %></h4><a href="/shop" class="btn btn-danger rounded-pill mt-2"><%= t('ord_go_shop') %></a></div>
   <% } %>
 </div>
 <%- include('partials/footer') %>
