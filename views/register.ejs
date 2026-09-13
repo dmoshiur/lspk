@@ -1,51 +1,54 @@
+<%
+  const _t = (typeof t === 'function') ? t : (k) => k;
+%>
 <%- include('partials/header') %>
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-lg-8">
       <div class="card p-4 p-lg-5 shadow-lg border-0" style="border-radius:22px;">
-        <h2 class="text-center mb-4 fw-bold" style="letter-spacing:-.02em; color:var(--primary);"><i class="fas fa-user-plus me-2"></i><%= t('auth_register_title') %></h2>
+        <h2 class="text-center mb-4 fw-bold" style="letter-spacing:-.02em; color:var(--primary);"><i class="fas fa-user-plus me-2"></i><%= _t('auth_register_title') %></h2>
         <form method="POST" enctype="multipart/form-data" action="/register">
           <div class="mb-4 text-center p-3 rounded-4" style="background:#f8fafc; border:1.5px dashed #e2e8f0;">
-            <label class="form-label fw-bold"><%= t('auth_profile_pic') %> (<%= t('common_optional') %>)</label>
+            <label class="form-label fw-bold"><%= _t('auth_profile_pic') %> (<%= _t('common_optional') %>)</label>
             <input type="file" class="form-control" name="profile_pic" accept="image/*">
-            <small class="text-muted">Max 16MB • JPG/PNG/GIF</small>
+            <small class="text-muted"><%= _t('auth_pic_size') %></small>
           </div>
-          <h5 class="text-danger border-bottom pb-2 mb-3"><i class="fas fa-id-card me-2"></i><%= t('prof_details') %></h5>
+          <h5 class="text-danger border-bottom pb-2 mb-3"><i class="fas fa-id-card me-2"></i><%= _t('prof_details') %></h5>
           <div class="row">
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_full_name') %> *</label><input type="text" class="form-control" name="name" required placeholder="John Doe"></div>
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('common_phone') %> *</label><input type="tel" class="form-control" name="phone" required placeholder="017XXXXXXXX"></div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_email') %> *</label><input type="email" class="form-control" name="email" required placeholder="john@example.com"></div>
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_password') %> *</label><input type="password" class="form-control" name="password" required placeholder="<%= t('sec_min8') %>"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_full_name') %> *</label><input type="text" class="form-control" name="name" required placeholder="John Doe"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('common_phone') %> *</label><input type="tel" class="form-control" name="phone" required placeholder="017XXXXXXXX"></div>
           </div>
           <div class="row">
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_dob') %> *</label><input type="date" class="form-control" id="dob" name="date_of_birth" required onchange="calculateAge()"></div>
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_age') %></label><input type="number" class="form-control bg-light" id="age" name="age" readonly placeholder="18+"><small class="text-muted">18+</small></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_email') %> *</label><input type="email" class="form-control" name="email" required placeholder="john@example.com"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_password') %> *</label><input type="password" class="form-control" name="password" required placeholder="<%= _t('sec_min8') %>"></div>
           </div>
-          <div class="mb-3"><label class="form-label"><%= t('auth_birth_cert') %> (<%= t('common_optional') %>)</label><input type="text" class="form-control" name="birth_certificate"></div>
-          <h5 class="text-danger border-bottom pb-2 mb-3 mt-4"><i class="fas fa-tint me-2"></i><%= t('common_blood_group') %> &amp; <%= t('common_role') %></h5>
           <div class="row">
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('common_blood_group') %> *</label>
-              <select class="form-select" name="blood_group" required><option value=""><%= t('auth_select') %></option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_dob') %> *</label><input type="date" class="form-control" id="dob" name="date_of_birth" required onchange="calculateAge()"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_age') %></label><input type="number" class="form-control bg-light" id="age" name="age" readonly placeholder="<%= _t('auth_18plus') %>"><small class="text-muted"><%= _t('auth_18plus') %></small></div>
+          </div>
+          <div class="mb-3"><label class="form-label"><%= _t('auth_birth_cert') %> (<%= _t('common_optional') %>)</label><input type="text" class="form-control" name="birth_certificate"></div>
+          <h5 class="text-danger border-bottom pb-2 mb-3 mt-4"><i class="fas fa-tint me-2"></i><%= _t('common_blood_group') %> &amp; <%= _t('common_role') %></h5>
+          <div class="row">
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('common_blood_group') %> *</label>
+              <select class="form-select" name="blood_group" required><option value=""><%= _t('auth_select') %></option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
             </div>
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_role') %> *</label>
-              <select class="form-select" name="role" required><option value=""><%= t('auth_select') %></option><option value="Both">Donate & Request</option><option value="Donor">Donate Only</option><option value="Recipient">Request Only</option><option value="Volunteer">Volunteer</option></select>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_role') %> *</label>
+              <select class="form-select" name="role" required><option value=""><%= _t('auth_select') %></option><option value="Both"><%= _t('auth_role_both') %></option><option value="Donor"><%= _t('auth_role_donor') %></option><option value="Recipient"><%= _t('auth_role_patient') %></option><option value="Volunteer"><%= _t('auth_role_volunteer') %></option></select>
             </div>
           </div>
-          <h5 class="text-danger border-bottom pb-2 mb-3 mt-4"><i class="fas fa-map-marker-alt me-2"></i><%= t('prof_location') %></h5>
+          <h5 class="text-danger border-bottom pb-2 mb-3 mt-4"><i class="fas fa-map-marker-alt me-2"></i><%= _t('prof_location') %></h5>
           <div class="row">
-            <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_division') %> *</label><select class="form-select" id="division" name="division" required><option value=""><%= t('auth_select') %></option></select></div>
-            <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_district') %> *</label><select class="form-select" id="district" name="district" required disabled><option value=""><%= t('auth_select') %></option></select></div>
-            <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_upazila') %> *</label><select class="form-select" id="upazila" name="upazila" required disabled><option value=""><%= t('auth_select') %></option></select></div>
+            <div class="col-md-4 mb-3"><label class="form-label"><%= _t('common_division') %> *</label><select class="form-select" id="division" name="division" required><option value=""><%= _t('auth_select') %></option></select></div>
+            <div class="col-md-4 mb-3"><label class="form-label"><%= _t('common_district') %> *</label><select class="form-select" id="district" name="district" required disabled><option value=""><%= _t('auth_select') %></option></select></div>
+            <div class="col-md-4 mb-3"><label class="form-label"><%= _t('common_upazila') %> *</label><select class="form-select" id="upazila" name="upazila" required disabled><option value=""><%= _t('auth_select') %></option></select></div>
           </div>
           <div class="row">
-            <div class="col-md-6 mb-3"><label class="form-label">Union/Area</label><input type="text" class="form-control" name="union"></div>
-            <div class="col-md-6 mb-3"><label class="form-label"><%= t('auth_holding') %></label><input type="text" class="form-control" name="holding"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_union') %></label><input type="text" class="form-control" name="union"></div>
+            <div class="col-md-6 mb-3"><label class="form-label"><%= _t('auth_holding') %></label><input type="text" class="form-control" name="holding"></div>
           </div>
-          <div class="alert alert-warning border-0" style="border-radius:14px; background:#fffbeb; color:#92400e;"><strong><%= t('home_notice') %>:</strong> 18+ • <%= t('home_step2_d') %></div>
-          <div class="d-grid"><button type="submit" class="btn btn-danger btn-lg" style="border-radius:999px;"><i class="fas fa-user-check me-2"></i><%= t('auth_register_btn') %></button></div>
-          <p class="text-center mt-4"><%= t('auth_have_account') %> <a href="/login" class="text-decoration-none fw-bold" style="color:var(--primary);"><%= t('auth_sign_in') %></a></p>
+          <div class="alert alert-warning border-0" style="border-radius:14px; background:#fffbeb; color:#92400e;"><strong><%= _t('home_notice') %>:</strong> <%= _t('auth_age_notice') %></div>
+          <div class="d-grid"><button type="submit" class="btn btn-danger btn-lg" style="border-radius:999px;"><i class="fas fa-user-check me-2"></i><%= _t('auth_register_btn') %></button></div>
+          <p class="text-center mt-4"><%= _t('auth_have_account') %> <a href="/login" class="text-decoration-none fw-bold" style="color:var(--primary);"><%= _t('auth_sign_in') %></a></p>
         </form>
       </div>
     </div>
@@ -53,8 +56,8 @@
 </div>
 
 <script>
-  var SEL_PLACEHOLDER_DIST='<option value=""><%= t('auth_select') %></option>';
-  var SEL_PLACEHOLDER_UPA='<option value=""><%= t('auth_select') %></option>';
+  var SEL_PLACEHOLDER_DIST='<option value=""><%= _t('auth_select') %></option>';
+  var SEL_PLACEHOLDER_UPA='<option value=""><%= _t('auth_select') %></option>';
   function calculateAge(){
     const dob=document.getElementById('dob').value;
     if(!dob) return;
@@ -64,8 +67,6 @@
     if(m<0 || (m===0 && today.getDate()<birth.getDate())) age--;
     document.getElementById('age').value=age;
   }
-  const bangladeshData = <%- JSON.stringify(typeof bangladeshData !== 'undefined' ? bangladeshData : {}) %>;
-  // Inject if not passed - load via fetch
   const bdData = {
     "Barishal":{"Barguna":["Amtali","Bamna","Barguna Sadar","Betagi","Patharghata","Taltali"],"Barishal":["Agailjhara","Babuganj","Bakerganj","Banaripara","Barishal Sadar","Gournadi","Hizla","Mehendiganj","Muladi","Wazirpur"],"Bhola":["Bhola Sadar","Burhanuddin","Char Fasson","Daulatkhan","Lalmohan","Manpura","Tazumuddin"],"Jhalokati":["Jhalokati Sadar","Kathalia","Nalchity","Rajapur"],"Patuakhali":["Bauphal","Dashmina","Dumki","Galachipa","Kalapara","Mirzaganj","Patuakhali Sadar","Rangabali"],"Pirojpur":["Bhandaria","Kawkhali","Mathbaria","Nazirpur","Nesarabad","Pirojpur Sadar"]},
     "Chattogram":{"Bandarban":["Ali Kadam","Bandarban Sadar","Lama","Naikhongchhari","Rowangchhari","Ruma","Thanchi"],"Brahmanbaria":["Akhaura","Ashuganj","Bancharampur","Bijoynagar","Brahmanbaria Sadar","Kasba","Nabinagar","Nasirnagar","Sarail"],"Chandpur":["Chandpur Sadar","Faridganj","Haimchar","Haziganj","Kachua","Matlab Dakshin","Matlab Uttar","Shahrasti"],"Chattogram":["Anwara","Banshkhali","Boalkhali","Chandanaish","Fatikchhari","Hathazari","Lohagara","Mirsharai","Patiya","Rangunia","Raozan","Sandwip","Satkania","Sitakunda"],"Comilla":["Barura","Brahmanpara","Burichang","Chandina","Chauddagram","Comilla Sadar","Comilla Sadar Dakshin","Daudkandi","Debidwar","Homna","Laksam","Titas"],"Cox's Bazar":["Chakaria","Cox's Bazar Sadar","Kutubdia","Maheshkhali","Pekua","Ramu","Teknaf","Ukhia"],"Feni":["Chhagalnaiya","Daganbhuiyan","Feni Sadar","Fulgazi","Parshuram","Sonagazi"],"Khagrachhari":["Dighinala","Khagrachhari Sadar","Lakshmichhari","Mahalchhari","Manikchhari","Matiranga","Panchhari","Ramgarh"],"Lakshmipur":["Kamalnagar","Lakshmipur Sadar","Raipur","Ramganj","Ramgati"],"Noakhali":["Begumganj","Chatkhil","Companiganj","Hatiya","Noakhali Sadar","Senbagh","Sonaimuri","Subarnachar"],"Rangamati":["Baghaichhari","Barkal","Belaichhari","Juraichhari","Kaptai","Kawkhali","Langadu","Naniyachar","Rajasthali","Rangamati Sadar"]},

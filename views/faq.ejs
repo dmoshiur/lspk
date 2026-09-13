@@ -1,22 +1,25 @@
+<%
+  const _t = (typeof t === 'function') ? t : (k) => k;
+%>
 <%- include('partials/header') %>
 <div class="container mt-4">
-  <h2 class="fw-bold mb-3"><i class="fas fa-question-circle text-danger me-2"></i>FAQ</h2>
+  <h2 class="fw-bold mb-3"><i class="fas fa-question-circle text-danger me-2"></i><%= _t('nav_faq') %></h2>
   <div class="accordion" id="faq">
     <div class="accordion-item" style="border-radius:14px; overflow:hidden; margin-bottom:12px; border:1px solid #e2e8f0;">
-      <h2 class="accordion-header"><button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f1"><%= t('faq_q1') %></button></h2>
-      <div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faq"><div class="accordion-body text-muted">Yes. Searching donors and posting blood requests are free. For shop orders, delivery inside Kalai is a flat ৳10, payable via bKash, Nagad, Rocket, Upay, Pathao Pay, card, or cash on delivery.</div></div>
+      <h2 class="accordion-header"><button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f1"><%= _t('faq_q1') %></button></h2>
+      <div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faq"><div class="accordion-body text-muted"><%= _t('faq_a1') %></div></div>
     </div>
     <div class="accordion-item" style="border-radius:14px; overflow:hidden; margin-bottom:12px; border:1px solid #e2e8f0;">
-      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f2"><%= t('faq_q2') %></button></h2>
-      <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">Pilot delivery is Kalai only (৳10 flat). We validate Upazila on both client and server to prevent mistakes.</div></div>
+      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f2"><%= _t('faq_q2') %></button></h2>
+      <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted"><%= _t('faq_a2') %></div></div>
     </div>
     <div class="accordion-item" style="border-radius:14px; overflow:hidden; margin-bottom:12px; border:1px solid #e2e8f0;">
-      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f3"><%= t('faq_q3') %></button></h2>
-      <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">Register, be 18+, upload correct info. Admin verifies within 24h. Toggle availability after verification.</div></div>
+      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f3"><%= _t('faq_q3') %></button></h2>
+      <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted"><%= _t('faq_a3') %></div></div>
     </div>
     <div class="accordion-item" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0;">
-      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f4"><%= t('faq_q4') %></button></h2>
-      <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">bKash, Nagad, Upay, Rocket, Pathao Pay, Card, and Cash on Delivery. Numbers are saved for next order.</div></div>
+      <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f4"><%= _t('faq_q4') %></button></h2>
+      <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted"><%= _t('faq_a4') %></div></div>
     </div>
   </div>
 </div>

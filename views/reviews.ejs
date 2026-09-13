@@ -1,4 +1,3 @@
-<%- include('partials/header') %>
 <%
   const _t   = (typeof t === 'function') ? t : (k) => k;
   const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -9,11 +8,12 @@
   const _avg = (summary && summary.count) ? Number(summary.average).toFixed(2) : '—';
   const _isLogged = (typeof currentUser !== 'undefined' && currentUser);
 %>
+<%- include('partials/header') %>
 
 <div class="container mt-4 mb-5">
   <!-- Header -->
   <div class="text-center mb-4">
-    <div class="eyebrow mb-2">Community</div>
+    <div class="eyebrow mb-2"><%= _t('adm_community') %></div>
     <h1 class="display-title mb-2"><i class="fas fa-star text-warning me-2"></i><%= _t('rev_title') %></h1>
     <p class="text-muted mb-0"><%= _t('rev_sub') %></p>
   </div>
@@ -57,17 +57,17 @@
           <form method="POST" action="/reviews" class="row g-3">
             <div class="col-md-6">
               <label class="form-label"><%= _t('rev_heading') %></label>
-              <input name="title" class="form-control" maxlength="120" placeholder="<%= lang==='bn'?'যেমন: খুব দ্রুত ডেলিভারি':lang==='ar'?'مثال: توصيل سريع جدًا':'e.g. Excellent service and fast delivery' %>">
+              <input name="title" class="form-control" maxlength="120" placeholder="<%= _t('rev_heading_ph') %>">
             </div>
             <div class="col-md-6">
-              <label class="form-label"><%= lang==='bn'?'পণ্য (ঐচ্ছিক)':lang==='ar'?'المنتج (اختياري)':'Product (optional)' %></label>
+              <label class="form-label"><%= _t('rev_prod_label') %></label>
               <select name="product_id" class="form-select">
-                <option value=""><%= lang==='bn'?'সাধারণ প্রশংসাপত্র (কোনো পণ্য নয়)':lang==='ar'?'شهادة عامة (بدون منتج)':'General testimonial (no product)' %></option>
+                <option value=""><%= _t('rev_general_test') %></option>
                 <% (products || []).forEach(function(p){ %>
                   <option value="<%= p.id %>"><%= _esc(p.name) %> — ৳<%= p.price %></option>
                 <% }) %>
               </select>
-              <div class="form-text small"><%= lang==='bn'?'পণ্য রিভিউ দিতে হলে পণ্যটি অর্ডার করে থাকতে হবে।':lang==='ar'?'لمراجعة منتج يجب أن تكون قد طلبته سابقًا.':'A product review requires a past order of that product.' %></div>
+              <div class="form-text small"><%= _t('rev_order_req') %></div>
             </div>
             <div class="col-12">
               <label class="form-label"><%= _t('rev_rating') %></label>
@@ -80,10 +80,10 @@
             </div>
             <div class="col-12">
               <label class="form-label"><%= _t('rev_body') %></label>
-              <textarea name="body" class="form-control" rows="3" required minlength="10" maxlength="2000" placeholder="<%= lang==='bn'?'আপনার অভিজ্ঞতা বিস্তারিত লিখুন…':lang==='ar'?'اكتب تجربتك بالتفصيل…':'Tell others about your experience…' %>"></textarea>
+              <textarea name="body" class="form-control" rows="3" required minlength="10" maxlength="2000" placeholder="<%= _t('rev_body_ph') %>"></textarea>
             </div>
             <div class="col-12 d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div class="small text-muted"><i class="fas fa-shield-halved me-1 text-success"></i><%= _t('rev_pending') %> — <%= lang==='bn'?'অ্যাডমিন অনুমোদনের পর প্রকাশ পাবে।':lang==='ar'?'يُنشر بعد موافقة المشرف.':'published after admin approval.' %></div>
+              <div class="small text-muted"><i class="fas fa-shield-halved me-1 text-success"></i><%= _t('rev_pending') %> — <%= _t('rev_pending_note') %></div>
               <% if (_isLogged) { %>
                 <button class="btn btn-danger px-4"><i class="fas fa-paper-plane me-1"></i><%= _t('common_submit') %></button>
               <% } else { %>
@@ -118,9 +118,9 @@
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="d-flex align-items-center gap-2">
                   <% if (r.user_image && r.user_image !== 'default.jpg') { %>
-                    <img src="/uploads/<%= r.user_image %>" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
+                    <img src="/uploads/<%= r.user_image %>" alt="<%= r.user_name || 'User' %>" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
                   <% } else { %>
-                    <img src="https://ui-avatars.com/api/?background=e31b23&color=fff&size=64&bold=true&name=<%= encodeURIComponent(r.user_name || r.author_name || 'R') %>" style="width:38px;height:38px;border-radius:50%;">
+                    <img src="https://ui-avatars.com/api/?background=e31b23&color=fff&size=64&bold=true&name=<%= encodeURIComponent(r.user_name || r.author_name || 'R') %>" alt="<%= r.user_name || 'User' %>" style="width:38px;height:38px;border-radius:50%;">
                   <% } %>
                   <div>
                     <div class="fw-bold" style="font-size:.92rem;"><%= _esc(r.user_name || r.author_name || 'Anonymous') %></div>

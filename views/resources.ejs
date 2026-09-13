@@ -1,4 +1,3 @@
-<%- include('partials/header') %>
 <%
   const _t   = (typeof t === 'function') ? t : (k) => k;
   const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -10,22 +9,19 @@
   const CAT_ICON = { 'Donation':'fa-hand-holding-heart', 'Education':'fa-graduation-cap', 'First-Aid':'fa-kit-medical', 'Health':'fa-heart-pulse' };
   const CAT_COLOR= { 'Donation':'#dc2626', 'Education':'#0284c7', 'First-Aid':'#d97706', 'Health':'#16a34a' };
 %>
+<%- include('partials/header') %>
 
 <div class="container mt-4 mb-5">
   <div class="text-center mb-4">
-    <div class="eyebrow mb-2">Library</div>
+    <div class="eyebrow mb-2"><%= _t('res_library') %></div>
     <h1 class="display-title mb-2"><i class="fas fa-graduation-cap text-danger me-2"></i><%= _t('nav_education') %></h1>
     <p class="text-muted mb-0" style="max-width:82ch; margin-inline:auto;">
-      <%= _bn
-        ? 'রক্তদান, সামঞ্জস্যতা, জরুরি প্রাথমিক চিকিৎসা ও দাতার স্বাস্থ্য নিয়ে পূর্ণাঙ্গ গাইড — প্রতিটি আর্টিকেল সম্পূর্ণ, টিজার নয়।'
-        : _ar
-        ? 'أدلة كاملة عن التبرع بالدم والتوافق والإسعافات الأولية وصحة المتبرع — كل مقال كامل لا مجرد مقتطف.'
-        : 'Complete guides to donation, compatibility, emergency first aid and donor health — every article is a full read, not a teaser.' %>
+      <%= _t('res_lead') %>
     </p>
   </div>
 
   <% if (typeof loadError !== 'undefined' && loadError) { %>
-    <div class="alert alert-warning border-0 rounded-4 mb-4"><i class="fas fa-triangle-exclamation me-2"></i><%= lang==='bn'?'লাইভ ডেটা লোড করা যায়নি — বিল্ট-ইন লাইব্রেরি দেখানো হচ্ছে।':'Live data unavailable — showing the built-in library.' %></div>
+    <div class="alert alert-warning border-0 rounded-4 mb-4"><i class="fas fa-triangle-exclamation me-2"></i><%= _t('res_load_error') %></div>
   <% } %>
 
   <!-- Category filters + search -->
@@ -34,7 +30,7 @@
       <form method="GET" class="row g-2 align-items-center">
         <div class="col-md-4">
           <select name="category" class="form-select" onchange="this.form.submit()">
-            <option value=""><%= _bn?'সব ক্যাটাগরি':_ar?'كل الفئات':'All categories' %></option>
+            <option value=""><%= _t('res_all_cats') %></option>
             <% _cats.forEach(function(c){ %>
               <option value="<%= _esc(c) %>" <%= _q.category===c ? 'selected' : '' %>><%= _esc(c) %></option>
             <% }) %>
@@ -43,7 +39,7 @@
         <div class="col-md-6">
           <div class="input-group">
             <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-            <input type="text" name="q" class="form-control" value="<%= _esc(_q.q || '') %>" placeholder="<%= _bn?'বিষয় খুঁজুন… যেমন: আয়রন, ডেঙ্গু, থ্যালাসেমিয়া':_ar?'ابحث عن موضوع… مثل: الحديد، حمى الضنك':'Search a topic… e.g. iron, dengue, thalassaemia' %>">
+            <input type="text" name="q" class="form-control" value="<%= _esc(_q.q || '') %>" placeholder="<%= _t('res_search_ph') %>">
           </div>
         </div>
         <div class="col-md-2 d-grid"><button class="btn btn-danger"><i class="fas fa-filter me-1"></i><%= _t('common_search') %></button></div>
@@ -60,7 +56,7 @@
         </a>
       <% }) %>
     </div>
-    <span class="small text-muted"><%= _rs.length %> <%= _bn?'টি আর্টিকেল':_ar?'مقالًا':'articles' %></span>
+    <span class="small text-muted"><%= _rs.length %> <%= _t('res_articles_count') %></span>
   </div>
 
   <div class="row g-3">
@@ -102,8 +98,8 @@
       <div class="col-12">
         <div class="alert alert-info text-center border-0 shadow-sm rounded-4 py-4">
           <i class="fas fa-folder-open fa-2x d-block mb-2 text-muted"></i>
-          <%= _bn?'এই ফিল্টারে কোনো আর্টিকেল পাওয়া যায়নি।':_ar?'لا توجد مقالات بهذه التصفية.':'No articles match this filter.' %>
-          <a href="/resources" class="alert-link"><%= _t('common_all') %></a>
+          <%= _t('res_no_match') %>
+          <a href="/resources" class="alert-link ms-1"><%= _t('common_all') %></a>
         </div>
       </div>
     <% } %>
@@ -114,7 +110,7 @@
     <div class="col-12">
       <div class="card border-0 shadow-sm" style="border-radius:22px; background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
         <div class="card-body p-4">
-          <h2 class="h6 fw-bold mb-3" style="color:#fff;"><i class="fas fa-link me-2"></i><%= _bn?'সম্পর্কিত রেফারেন্স':_ar?'مراجع ذات صلة':'Related references' %></h2>
+          <h2 class="h6 fw-bold mb-3" style="color:#fff;"><i class="fas fa-link me-2"></i><%= _t('res_related_title') %></h2>
           <div class="row g-2">
             <% [
               ['/compatibility','fa-vial', _t('nav_compatibility')],
