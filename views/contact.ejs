@@ -26,7 +26,7 @@
             <form method="POST" action="/messages/send" class="d-grid gap-3">
               <input name="subject" class="form-control" placeholder="Subject" required>
               <textarea name="content" class="form-control" rows="4" placeholder="Your message..." required></textarea>
-              <button class="btn btn-danger rounded-pill">Send Message</button>
+              <button class="btn btn-danger rounded-pill"><%= t('contact_send') %></button>
             </form>
           <% } else { %>
             <div class="alert alert-warning border-0 rounded-4">Please <a href="/login">login</a> to send a direct message. Or email us at <%= settings && settings.site_email ? settings.site_email : 'info.bloodora@gmail.com' %>.</div>

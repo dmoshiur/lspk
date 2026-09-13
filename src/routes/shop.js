@@ -197,14 +197,18 @@ router.get("/order/success/:id", async (req, res) => {
   }
 });
 
-// GET /shop/my-orders
-router.get("/my-orders", requireLogin, async (req, res) => {
+// GET /shop/my-orders — the user dashboard owns the canonical orders page now.
+router.get("/my-orders", (req, res) => res.redirect("/dashboard/orders"));
+
+// POST /shop/order/:id/cancel — real backend endpoint (owner or admin).
+router.post("/order/:id/cancel", requireLogin, async (req, res) => {
   try {
-    const d = await apiGet("/api/shop/orders/mine", req.session.token);
-    res.render("my_orders", { title: "My Orders - BloodOra", orders: d.orders });
+    const d = await apiPost(`/api/shop/orders/${req.params.id}/cancel`, {}, req.session.token);
+    req.session.flash = { type: d.type || "success", message: d.message || "✅" };
   } catch (e) {
-    res.render("my_orders", { title: "My Orders - BloodOra", orders: [] });
+    req.session.flash = { type: e.status === 400 ? "warning" : "danger", message: e.message || "❌" };
   }
+  res.redirect(req.get("Referer") || "/dashboard/orders");
 });
 
 // ============== Admin Shop ==============

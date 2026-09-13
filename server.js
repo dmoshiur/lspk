@@ -24,6 +24,7 @@ import messageRoutes from "./src/routes/messages.js";
 import reviewRoutes from "./src/routes/reviews.js";
 import supportRoutes from "./src/routes/support.js";
 import aiRoutes from "./src/routes/ai.js";
+import dashboardRoutes from "./src/routes/dashboard.js";
 
 import { siteContext } from "./src/middleware/site.js";
 import { DEFAULT_LANG } from "./src/i18n.js";
@@ -130,6 +131,7 @@ app.use("/messages", messageRoutes);
 app.use("/reviews", reviewRoutes);
 app.use("/support", supportRoutes);   // Live Messaging (human support)
 app.use("/ai-help", aiRoutes);        // Live AI Help (Groq / Qwen3.6 27B)
+app.use("/dashboard", dashboardRoutes); // User dashboard (real API data only)
 
 // Aliases for compatibility with old URL names
 app.get("/profile/switch-back", (req, res) => res.redirect("/admin/profile/switch-back"));

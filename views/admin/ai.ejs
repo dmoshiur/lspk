@@ -113,9 +113,9 @@
               <p class="small text-muted">Rebuilt from the <em>current</em> database on every question, so the assistant knows live products, prices, stock and platform numbers.</p>
               <% if (_k) { %>
                 <div class="row g-2 text-center mb-3">
-                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;"><%= _k.routes %></div><div class="small text-muted">Routes</div></div></div>
-                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;"><%= _k.live.products ? _k.live.products.length : 0 %></div><div class="small text-muted">Products</div></div></div>
-                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;">~<%= Math.round((_k.approxTokens||0)/100)*100/100 %>k</div><div class="small text-muted">Tokens</div></div></div>
+                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;"><%= _k.characters != null ? Number(_k.characters).toLocaleString() : '—' %></div><div class="small text-muted"><%= t('adm_kb_chars') %></div></div></div>
+                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;"><%= _k.productCount != null ? _k.productCount : '—' %></div><div class="small text-muted"><%= t('adm_kb_products') %></div></div></div>
+                  <div class="col-4"><div class="p-2 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;"><div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem;"><%= _k.approxTokens != null ? '~'+_k.approxTokens : '—' %></div><div class="small text-muted"><%= t('adm_kb_tokens') %></div></div></div>
                 </div>
                 <button class="btn btn-sm btn-outline-danger w-100" type="button" data-bs-toggle="collapse" data-bs-target="#kb-preview"><i class="fas fa-file-lines me-1"></i>Inspect the system prompt</button>
                 <div class="collapse mt-2" id="kb-preview">

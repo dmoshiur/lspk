@@ -1,21 +1,21 @@
 <%- include('partials/header') %>
 <div class="container mt-4">
-  <h2 class="fw-bold mb-3" style="letter-spacing:-.02em;"><i class="fas fa-credit-card text-danger me-2"></i>Checkout</h2>
+  <h2 class="fw-bold mb-3" style="letter-spacing:-.02em;"><i class="fas fa-credit-card text-danger me-2"></i><%= t('shop_checkout') %></h2>
   <form method="POST" action="/shop/checkout">
     <div class="row g-4">
       <div class="col-lg-8">
         <!-- Delivery Address -->
         <div class="card border-0 shadow-sm mb-3" style="border-radius:18px;">
-          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-truck me-2 text-danger"></i>Delivery Address — Only Kalai ৳10</h5><small class="text-muted">Home delivery currently ONLY available in Kalai Upazila, Joypurhat.</small></div>
+          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-truck me-2 text-danger"></i><%= t('shop_delivery_addr') %></h5><small class="text-muted"><%= t('shop_delivery_note') %></small></div>
           <div class="card-body px-4">
             <div class="row">
-              <div class="col-md-4 mb-3"><label class="form-label">Division *</label>
+              <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_division') %> *</label>
                 <select name="division" class="form-select" required><option value="">Select Division</option><option selected>Rajshahi</option><option>Dhaka</option><option>Chattogram</option><option>Khulna</option><option>Barishal</option><option>Rangpur</option><option>Sylhet</option><option>Mymensingh</option></select>
               </div>
-              <div class="col-md-4 mb-3"><label class="form-label">District *</label>
+              <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_district') %> *</label>
                 <select name="district" class="form-select" required><option value="">Select District</option><option selected>Joypurhat</option><option>Bogura</option><option>Rajshahi</option><option>Dhaka</option></select>
               </div>
-              <div class="col-md-4 mb-3"><label class="form-label">Upazila *</label>
+              <div class="col-md-4 mb-3"><label class="form-label"><%= t('common_upazila') %> *</label>
                 <select name="upazila" id="upazila" class="form-select" required>
                   <option value="">Select Upazila</option>
                   <option value="Kalai" <%= (typeof user_address !== 'undefined' && user_address.upazila==='Kalai')?'selected':'' %>>কলাই (Kalai) - ✅ Delivery Available ৳10</option>
@@ -28,13 +28,13 @@
                 <small class="text-danger d-none" id="deliveryWarning">⚠️ Delivery only available in Kalai!</small>
               </div>
             </div>
-            <div class="mb-3"><label class="form-label">Detailed Address *</label><textarea name="delivery_address" class="form-control" rows="2" placeholder="House/Road/Village, Union, Holding..." required><%= (typeof user_address !== 'undefined' && user_address.address) ? user_address.address : '' %></textarea></div>
+            <div class="mb-3"><label class="form-label"><%= t('co_detailed_addr') %> *</label><textarea name="delivery_address" class="form-control" rows="2" placeholder="House/Road/Village, Union, Holding..." required><%= (typeof user_address !== 'undefined' && user_address.address) ? user_address.address : '' %></textarea></div>
           </div>
         </div>
 
         <!-- Payment -->
         <div class="card border-0 shadow-sm mb-3" style="border-radius:18px;">
-          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-money-bill-wave me-2 text-success"></i>Payment Method</h5></div>
+          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-money-bill-wave me-2 text-success"></i><%= t('shop_payment_method') %></h5></div>
           <div class="card-body px-4">
             <!-- bKash -->
             <div class="p-3 rounded-4 mb-3" style="border:1.5px solid #e2e8f0;">
@@ -121,7 +121,7 @@
             <div class="p-3 rounded-4" style="border:1.5px solid #e2e8f0; background:#f0fdf4;">
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="payment_method" value="Cash on Delivery" id="cod">
-                <label class="form-check-label fw-bold" for="cod"><i class="fas fa-money-bill me-2 text-success"></i>Cash on Delivery</label>
+                <label class="form-check-label fw-bold" for="cod"><i class="fas fa-money-bill me-2 text-success"></i><%= t('shop_cod') %></label>
                 <span class="badge bg-success ms-2">Recommended for Kalai</span>
               </div>
               <small class="text-muted d-block mt-2">Pay when rider delivers to your Kalai address. No advance needed.</small>
@@ -136,7 +136,7 @@
 
       <div class="col-lg-4">
         <div class="card border-0 shadow-sm sticky-top" style="border-radius:18px; top:84px;">
-          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-receipt me-2 text-danger"></i>Order Summary</h5></div>
+          <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-receipt me-2 text-danger"></i><%= t('shop_order_summary') %></h5></div>
           <div class="card-body px-4">
             <% cart_items.forEach(item=>{ %>
               <div class="d-flex justify-content-between small mb-2"><span><%= item.product.name %> × <%= item.quantity %></span><span class="fw-bold">৳<%= item.subtotal.toFixed(2) %></span></div>

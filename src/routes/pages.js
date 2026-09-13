@@ -52,11 +52,16 @@ router.get("/set-language/:code", (req, res) => {
 
 // ----------------------------------------------------------- Compatibility
 router.get("/compatibility", async (req, res) => {
+  const title = `${req.t('nav_compatibility')} - ${res.locals.siteName}`;
   try {
     const d = await apiGet("/api/meta/compatibility");
-    res.render("compatibility", { title: `${req.t('nav_compatibility')} - ${res.locals.siteName}`, reference: d.reference, loadError: false });
+    // Shape guard: a reference without the rbc matrix cannot render — use the
+    // bundled fallback rather than crashing.
+    const r = d && d.reference;
+    const ok = r && ["rbc", "plasma", "platelets", "components", "facts", "emergencies"].every((k) => Array.isArray(r[k]));
+    res.render("compatibility", { title, reference: ok ? d.reference : compatibilityReference, loadError: !ok });
   } catch (e) {
-    res.render("compatibility", { title: `${req.t('nav_compatibility')} - ${res.locals.siteName}`, reference: compatibilityReference, loadError: true });
+    res.render("compatibility", { title, reference: compatibilityReference, loadError: true });
   }
 });
 
@@ -65,12 +70,18 @@ router.get("/antid", async (req, res) => {
   const title = `${req.t('nav_antid')} - ${res.locals.siteName}`;
   try {
     const d = await apiGet("/api/meta/antid");
+    // Shape guard: the view needs summary/indications/dosing/faq arrays —
+    // fall back to the bundled reference when the payload is incomplete.
+    const r = d && d.reference;
+    const ok = r && r.summary &&
+      ["whatItIs", "indications", "dosing", "timing", "administration", "faq", "sources"].every((k) => Array.isArray(r[k])) &&
+      r.safety && ["common", "rare", "contraindications", "storage"].every((k) => Array.isArray(r.safety[k]));
     res.render("antid", {
       title,
-      reference: d.reference,
+      reference: ok ? r : antidReference,
       antid_info: d.antid_info || [],
       entries: d.entries || [],
-      loadError: false,
+      loadError: !ok,
     });
   } catch (e) {
     // Never show an empty Anti-D page: fall back to the built-in reference.
@@ -141,6 +152,19 @@ router.get("/api/routes", async (req, res) => {
 router.get("/health", async (req, res) => {
   try { res.json(await apiGet("/api/health")); }
   catch (e) { res.status(500).json({ status: "unhealthy", error: e.message }); }
+});
+
+// ------------------------------------------------- notifications (real only)
+// JSON for the navbar bell: the ONLY real notification source the backend has
+// today is the unread inbox count from /api/messages. No fake feeds.
+router.get("/api/notifications/unread", async (req, res) => {
+  if (!req.user) return res.json({ success: true, unread: 0 });
+  try {
+    const d = await apiGet("/api/messages", req.session.token);
+    res.json({ success: true, unread: d.unread_count || 0 });
+  } catch (e) {
+    res.json({ success: false, unread: 0 });
+  }
 });
 
 // Chat identity endpoint (used by the live chat widget)
