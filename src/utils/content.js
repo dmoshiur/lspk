@@ -1,9 +1,10 @@
-// ==================== BloodOra Backend - Canonical Reference Content ====================
-// This module is the *guaranteed* source of the site's reference material.
-// Admin-managed database rows are MERGED on top of it (see routes/meta.js), so a
-// reference page can never render empty because the database is fresh, empty,
-// unreachable or still seeding. Every field is bilingual-ready.
-
+// ==================== BloodOra Frontend - Built-in Reference Content ====================
+// Static reference material used as an OFFLINE FALLBACK: when the backend API
+// cannot be reached, /antid, /compatibility, /resources and /api/routes still
+// render real content instead of an empty page. The API's own data always wins.
+//
+// This file is owned by the FRONTEND and is fully self-contained: the frontend
+// never imports from the backend repository's source tree.
 // ------------------------------------------------------------------ Anti-D
 // Anti-D (RhD immunoglobulin) — complete clinical reference.
 export const antidReference = {
@@ -278,62 +279,4 @@ export const siteRoutes = [
   { path: "/shop/admin/orders", title: "Order Management", purpose: "Filter orders by status, open any order, confirm payment, change fulfilment status and generate the printable invoice.", keywords: ["orders", "manage orders", "confirm payment", "invoice", "order status"] },
   { path: "/health", title: "Health Check", purpose: "Proxies the backend health endpoint: database connectivity, service name and timestamp.", keywords: ["health", "status", "uptime"] },
   { path: "/sitemap.xml", title: "Sitemap", purpose: "XML sitemap of the public pages for search engines.", keywords: ["sitemap", "seo"] },
-];
-
-// ------------------------------------------------------- Feature knowledge
-// A-to-Z description of what the platform can do, used by the AI assistant.
-export const featureKnowledge = [
-  {
-    area: "Donor Network",
-    details: "Voluntary donors register, then an admin verifies them. Verified donors appear in the public directory at /donors and can be filtered by blood group (all 8 ABO/RhD groups), division, district, upazila and minimum age. Each donor card links to a public profile at /donors/profile/view/:id. A donor can toggle their own availability on and off at /donors/profile/my at any time, and can request verification once they are 18 or older.",
-  },
-  {
-    area: "Blood Requests",
-    details: "Anyone can post a request at /request-blood with patient name and relation, blood group, quantity, hospital name and address, contact person, phone, optional email, needed-by date, division/district/upazila and an urgent flag with a reason. The urgent appeal shortcut is /urgent. All open requests are listed at /blood-requests with filters, and each request has a detail page at /blood-request/:id where a donor can mark it fulfilled or cancelled. Unfulfilled urgent requests are surfaced on the homepage.",
-  },
-  {
-    area: "Medical Shop",
-    details: "The shop at /shop sells medicines, supplements, equipment and healthcare products. The catalogue supports a category filter and free-text search, and each card shows the live stock count. Clicking a card opens the product detail page at /shop/product/:id. Add to cart is instant and works without an account; the cart lives in the browser session and is priced by the server. The cart page /shop/cart lets the user change quantity or remove items. Checkout at /shop/checkout requires login, supports bKash, Nagad, Upay, Rocket, Pathao, Card and Cash on Delivery, asks for the payment transaction ID, and stores the payment number on the user's profile for next time. Home delivery is available ONLY in Kalai Upazila for a flat ৳10. After ordering, the user sees a confirmation page and can track the order at /shop/my-orders with statuses pending, processing, shipped, delivered and cancelled.",
-  },
-  {
-    area: "Reviews & Testimonials",
-    details: "The review page at /reviews shows two kinds of feedback: 1–5 star reviews attached to specific shop products, and general testimonials about BloodOra itself. Reviews can be filtered by product, by star rating and by type, and the page shows the overall average rating and total count. Logged-in users submit a review with a rating, title and body; if the review is attached to a product the user must have ordered it. New reviews go to the admin moderation queue and only appear publicly once approved. Admins can approve, reject, feature and publicly reply to any review, and can delete it.",
-  },
-  {
-    area: "Live Activity",
-    details: "The homepage Live Activity panel is real, not decorative. It streams genuine events from the database over a server-sent-event endpoint at /api/meta/activity/stream with a polling fallback at /api/meta/activity: newly verified donors, new blood requests, urgent appeals raised, requests fulfilled, new shop orders, orders delivered, new approved reviews and new user registrations, each with a relative timestamp and a deep link to the relevant page. The feed is shared across all visitors, so it updates in real time for everyone.",
-  },
-  {
-    area: "Live Messaging & Live AI Help",
-    details: "Two floating widgets sit at the bottom right of every page. (1) Live Messaging connects a visitor to a real human: messages are persisted in the database, streamed to the admin inbox at /admin/live-chat in real time, and admin replies appear in the visitor's widget live. Guests can chat without an account; logged-in users are identified by name. (2) Live AI Help is a Qwen-powered assistant with full knowledge of the site — every page, feature, workflow and option — and it returns clickable links, so asking it to open a page gives a working hyperlink. It also answers the three supported languages and can hand off to a human. The separate Messages centre at /messages is the asynchronous mailbox for longer conversations with the admin team or another user.",
-  },
-  {
-    area: "Multilingual Support",
-    details: "A language toggle in the top navigation switches the whole interface between English (en), Bengali (bn) and Arabic (ar). The choice is stored in the browser cookie and the server session, so it persists across pages and visits. Arabic switches the layout to full right-to-left, and the typography swaps to a script-appropriate font for each language. All UI labels, navigation, buttons, forms, error pages and the AI assistant's replies follow the selected language.",
-  },
-  {
-    area: "Admin Panel",
-    details: "Admins sign in at /login and reach the dashboard at /admin. Super admins are provisioned from environment variables and can do everything an admin can plus promote, demote, edit, delete and impersonate users. The dashboard shows live counts of users, verified donors, orders (with pending), products, pending verifications and urgent requests, and hosts the site-notice broadcaster. Sub-sections: /admin/settings (contact details, description, socials, payment merchant numbers), /admin/branding (logo, favicon, site name, tagline, brand colours, heading style), /admin/smtp (full mail server configuration plus test send and email log), /admin/ai (Groq key, model, temperature, system persona, suggested prompts, connection test), /admin/content (Anti-D entries and educational resources CRUD), /admin/reviews (moderation), /admin/live-chat (real-time support inbox), /shop/admin/products and /shop/admin/orders (shop management with printable invoices).",
-  },
-  {
-    area: "Accounts & Security",
-    details: "Registration at /register requires name, email, phone, a password of at least 6 characters, blood group and location. Login issues a JSON Web Token valid for 7 days, held in an httpOnly server session cookie on the frontend. Single-session enforcement means a new login revokes the previous token. Passwords are stored as bcrypt hashes. Uploaded images are proxied through the frontend from the backend's upload storage. Admins can impersonate any non-super-admin user and switch back; impersonation revokes the target's session when it ends.",
-  },
-  {
-    area: "Business & Operational Rules",
-    details: "Home delivery is restricted to Kalai Upazila, Joypurhat, for a flat ৳10 charge — the checkout rejects any other upazila. Donors must be at least 18 years old to be verified. Payment confirmation is manual: an admin confirms the transaction at /shop/admin/orders, which moves the order to processing and generates the invoice. Orders decrement product stock atomically at creation. Out-of-stock and unavailable products cannot be added to the cart. The site notice, when set by an admin, appears as a banner on the homepage.",
-  },
-];
-
-// --------------------------------------------------------- Business rules
-export const businessRules = [
-  "Home delivery is ONLY available in Kalai Upazila (Joypurhat district) and costs a flat ৳10. Checkout rejects any other upazila.",
-  "Donors must be at least 18 years old to be verified as donors.",
-  "An order can only be placed by a logged-in user; browsing and adding to the cart work without an account.",
-  "Payment confirmation is manual: an admin confirms the mobile-banking transaction ID, which moves the order to 'processing'.",
-  "Order statuses are: pending, processing, shipped, delivered, cancelled. Payment status is: pending or confirmed.",
-  "Supported payment methods: bKash, Nagad, Upay, Rocket, Pathao, Card, and Cash on Delivery.",
-  "New reviews and testimonials are moderated by an admin before they appear publicly.",
-  "The Live AI Help is powered by Qwen3.6 27B served through Groq and can be reconfigured or disabled from /admin/ai.",
-  "The site supports three languages: English, Bengali (বাংলা) and Arabic (العربية), switchable from the top navigation.",
 ];

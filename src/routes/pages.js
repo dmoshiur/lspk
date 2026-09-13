@@ -1,10 +1,18 @@
 // ==================== Frontend Routes - Public Pages (API-backed) ====================
 // Every reference page has a hard fallback: if the backend cannot be reached the
 // page still renders the complete built-in content instead of an empty state.
+// That fallback content lives in this repo (../utils/content.js) so the frontend
+// never reaches into the backend's source tree.
 import express from "express";
 import { apiGet, proxyEventStream } from "../api.js";
 import { SUPPORTED } from "../i18n.js";
 import { writeCookie } from "../middleware/site.js";
+import {
+  antidReference,
+  compatibilityReference,
+  resourcesReference,
+  siteRoutes,
+} from "../utils/content.js";
 
 const router = express.Router();
 
@@ -48,7 +56,6 @@ router.get("/compatibility", async (req, res) => {
     const d = await apiGet("/api/meta/compatibility");
     res.render("compatibility", { title: `${req.t('nav_compatibility')} - ${res.locals.siteName}`, reference: d.reference, loadError: false });
   } catch (e) {
-    const { compatibilityReference } = await import("../../backend/src/content.js");
     res.render("compatibility", { title: `${req.t('nav_compatibility')} - ${res.locals.siteName}`, reference: compatibilityReference, loadError: true });
   }
 });
@@ -67,7 +74,6 @@ router.get("/antid", async (req, res) => {
     });
   } catch (e) {
     // Never show an empty Anti-D page: fall back to the built-in reference.
-    const { antidReference } = await import("../../backend/src/content.js");
     res.render("antid", { title, reference: antidReference, antid_info: [], entries: [], loadError: true });
   }
 });
@@ -80,7 +86,6 @@ router.get("/resources", async (req, res) => {
     const d = await apiGet("/api/meta/resources", null, query);
     res.render("resources", { title, resources: d.resources, categories: d.categories, query, loadError: false });
   } catch (e) {
-    const { resourcesReference } = await import("../../backend/src/content.js");
     const cat = req.query.category;
     const resources = resourcesReference
       .filter((r) => !cat || r.category === cat)
@@ -129,7 +134,7 @@ router.get("/api/reviews", async (req, res) => {
 
 router.get("/api/routes", async (req, res) => {
   try { res.json(await apiGet("/api/meta/routes")); }
-  catch (e) { const { siteRoutes } = await import("../../backend/src/content.js"); res.json({ success: true, routes: siteRoutes }); }
+  catch (e) { res.json({ success: true, routes: siteRoutes }); }
 });
 
 // -------------------------------------------------------------- Health / SEO

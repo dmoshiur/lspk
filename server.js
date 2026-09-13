@@ -6,7 +6,7 @@
 import express from "express";
 import session from "express-session";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -27,6 +27,7 @@ import aiRoutes from "./src/routes/ai.js";
 
 import { siteContext } from "./src/middleware/site.js";
 import { DEFAULT_LANG } from "./src/i18n.js";
+import { CookieSessionStore, sessionContext } from "./src/middleware/cookieStore.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -48,10 +49,25 @@ app.use(morgan(isProd ? "combined" : "dev"));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public")));
+// Legacy /public/<file> URLs keep working (they map to the same folder).
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 // ---------- Session ----------
+// Vercel serverless functions are short-lived and not shared, so the session is
+// kept in a signed cookie instead of the in-memory default store. That removes
+// the "MemoryStore is not designed for a production environment" warning and
+// keeps users logged in across invocations.
+const SESSION_SECRET = process.env.SESSION_SECRET || "blood-donation-secret-key-2026";
+if (isProd && !process.env.SESSION_SECRET) {
+  console.warn("⚠️  SESSION_SECRET is not set — using the built-in fallback. Set it in Vercel.");
+}
+
+// Must run before session(): it gives the store access to the current req/res.
+app.use(sessionContext);
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || "blood-donation-secret-key-2026",
+  store: new CookieSessionStore({ secret: SESSION_SECRET, secure: isProd }),
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -201,9 +217,37 @@ app.use((err, req, res, next) => {
   renderError(req, res, status, view, { detail });
 });
 
-// ---------- Start ----------
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🩸 BloodOra v3.0 — FRONTEND (presentation layer)`);
-  console.log(`   URL: http://0.0.0.0:${PORT}`);
-  console.log(`   Backend API: ${BACKEND_URL}${process.env.BACKEND_URL ? "" : "  ⚠️ (BACKEND_URL not set — using local default)"}\n`);
-});
+// ==================== Entrypoints ====================
+
+/**
+ * Vercel serverless handler.
+ *
+ * @vercel/node imports this file and requires the module's DEFAULT export to be
+ * a request handler function or an http.Server. Without it the platform fails
+ * every request with:
+ *   "Invalid export found in module /var/task/server.js.
+ *    The default export must be a function or server."
+ * A named export alone (or an exported Express app under another name) is not
+ * enough — it has to be `export default`.
+ */
+export default function handler(req, res) {
+  return app(req, res);
+}
+
+/** Exported for tests / composition; the platform uses the default export above. */
+export { app };
+
+// ---------- Local development server ----------
+// Only listen when this file is executed directly (`node server.js`). On Vercel
+// the platform owns the socket, and calling listen() inside a serverless
+// function just pins the instance and logs a misleading URL.
+const isDirectRun =
+  !!process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (!process.env.VERCEL && isDirectRun) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`\n🩸 BloodOra v3.0 — FRONTEND (presentation layer)`);
+    console.log(`   URL: http://localhost:${PORT}`);
+    console.log(`   Backend API: ${BACKEND_URL}${process.env.BACKEND_URL ? "" : "  ⚠️ (BACKEND_URL not set — using local default)"}\n`);
+  });
+}
