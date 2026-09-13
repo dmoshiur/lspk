@@ -5,6 +5,13 @@ import express from "express";
 import multer from "multer";
 import { apiGet, apiPost, apiPostForm, apiPutForm, apiDel, buildFormData } from "../api.js";
 import { requireLogin, requireAdmin } from "../middleware/auth.js";
+import { localizeFromSource } from "../utils/localize.js";
+
+// Shop rows come from the backend CMS. `localizeRow` resolves any field the CMS
+// stores as { en, bn, ar } to the visitor's locale and repairs pre-escaped text
+// (mother&#39;s -> mother's). Fields stored as a single string pass through
+// unchanged — the frontend cannot invent a translation for data it never saw.
+const localizeRow = (row, lang) => (row ? localizeFromSource(row, null, lang) : row);
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
@@ -29,7 +36,7 @@ router.get("/", async (req, res) => {
     const d = await apiGet("/api/shop/products", null, { category: req.query.category, search: req.query.search });
     return res.render("shop", {
       title,
-      products: d.products || [],
+      products: (d.products || []).map((p) => localizeRow(p, res.locals.lang)),
       categories: d.categories || [],
       query: req.query,
       shopError: null,
@@ -42,7 +49,7 @@ router.get("/", async (req, res) => {
       products: [],
       categories: [],
       query: req.query,
-      shopError: e.message || "Could not load the shop catalogue.",
+      shopError: req.t("shop_load_error"),
     });
   }
 });
@@ -51,7 +58,8 @@ router.get("/", async (req, res) => {
 router.get("/product/:id", async (req, res) => {
   try {
     const d = await apiGet(`/api/shop/products/${req.params.id}`);
-    return res.render("product_detail", { title: d.product.name + " - " + res.locals.siteName, product: d.product });
+    const product = localizeRow(d.product, res.locals.lang);
+    return res.render("product_detail", { title: `${product.name} - ${res.locals.siteName}`, product });
   } catch (e) {
     if (e.status === 404) {
       return res.status(404).render("404", { title: req.t("err_404_title"), requestPath: req.originalUrl });
@@ -68,7 +76,8 @@ router.get("/product/:id", async (req, res) => {
 // GET /shop/cart
 router.get("/cart", async (req, res) => {
   const { items, subtotal } = await resolveSessionCart(req);
-  res.render("cart", { title: "Cart - BloodOra", cart_items: items, total: subtotal });
+  const cart_items = items.map((it) => ({ ...it, product: localizeRow(it.product, res.locals.lang) }));
+  res.render("cart", { title: `${req.t("nav_cart")} - ${res.locals.siteName}`, cart_items, total: subtotal });
 });
 
 // POST /shop/cart/add/:id  (supports JSON ajax and form)
@@ -137,7 +146,7 @@ router.get("/checkout", requireLogin, async (req, res) => {
     ctx = await apiGet("/api/shop/checkout/context", req.session.token);
   } catch (e) { /* keep empty defaults */ }
   res.render("checkout", {
-    title: "Checkout - BloodOra",
+    title: `${req.t("page_checkout")} - ${res.locals.siteName}`,
     cart_items: items, subtotal, delivery_charge, total,
     gateway_numbers: ctx.gateway_numbers,
     user_payment_methods: ctx.user_payment_methods,
@@ -187,13 +196,13 @@ router.post("/checkout", requireLogin, async (req, res) => {
 router.get("/order/success/:id", async (req, res) => {
   try {
     const d = await apiGet(`/api/shop/orders/${req.params.id}`, req.session.token);
-    res.render("order_success", { title: "Order Success - BloodOra", order: d.order, items: d.items, orderUser: d.orderUser });
+    res.render("order_success", { title: `${req.t("page_order_ok")} - ${res.locals.siteName}`, order: d.order, items: d.items, orderUser: d.orderUser });
   } catch (e) {
     if (e.status === 401 || e.status === 403) {
       req.session.flash = { type: "danger", message: e.message || "❌ Unauthorized." };
       return res.redirect("/shop");
     }
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
@@ -248,7 +257,7 @@ router.get("/admin/product/edit/:id", requireAdmin, async (req, res) => {
     const d = await apiGet(`/api/shop/products/${req.params.id}`);
     res.render("admin/product_form", { title: "Edit Product - Admin", product: d.product });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
@@ -297,7 +306,7 @@ router.get("/admin/order/:id", requireAdmin, async (req, res) => {
     const d = await apiGet(`/api/admin/orders/${req.params.id}`, req.session.token);
     res.render("admin/order_detail", { title: `Order #${d.order.id} - Admin`, order: d.order, items: d.items });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 
@@ -310,7 +319,7 @@ router.get("/admin/order/:id/invoice", requireAdmin, async (req, res) => {
     const customer_email = order.user_email || order.guest_email || "N/A";
     res.render("admin/invoice", { title: `Invoice #${order.id}`, order, items: d.items, customer_name, customer_phone, customer_email });
   } catch (e) {
-    return res.status(404).render("404", { title: "Not Found" });
+    return res.status(404).render("404", { title: `${req.t("page_not_found")} - ${res.locals.siteName}` });
   }
 });
 

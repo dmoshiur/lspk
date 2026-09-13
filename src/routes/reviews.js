@@ -2,6 +2,11 @@
 import express from "express";
 import { apiGet, apiPost, apiDel } from "../api.js";
 import { requireLogin, requireAdmin } from "../middleware/auth.js";
+import { localizeFromSource } from "../utils/localize.js";
+
+// Same rule as the shop: honour { en, bn, ar } fields from the CMS and repair
+// pre-escaped text; leave single-language user content exactly as written.
+const localizeRow = (row, lang) => (row ? localizeFromSource(row, null, lang) : row);
 
 const router = express.Router();
 
@@ -24,7 +29,10 @@ router.get("/", async (req, res) => {
   } catch (e) { /* optional */ }
   res.render("reviews", {
     title: `${req.t("rev_title")} - ${res.locals.siteName}`,
-    reviews, summary, products, query: req.query,
+    reviews: reviews.map((r) => localizeRow(r, res.locals.lang)),
+    summary,
+    products: products.map((p) => localizeRow(p, res.locals.lang)),
+    query: req.query,
   });
 });
 

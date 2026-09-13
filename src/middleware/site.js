@@ -8,6 +8,11 @@
 //      fallback, so a slow backend never blanks the branding.
 import { apiGet } from "../api.js";
 import { LANGUAGES, SUPPORTED, langMeta, makeT, DEFAULT_LANG } from "../i18n.js";
+// Views print text with EJS `<%= %>`, which escapes exactly once. Any text that
+// arrives pre-escaped (mother&#39;s, A &amp; B) is decoded once in the content
+// pipeline (src/utils/localize.js) before it reaches a template — the old
+// `<%= _esc(value) %>` pattern escaped twice and leaked a literal "&#39;".
+import { isLocalized, pickLocale } from "../utils/localize.js";
 
 // ------------------------------- cookies --------------------------------
 export function readCookie(req, name) {
@@ -44,8 +49,18 @@ export function resolveLanguage(req) {
 // ------------------------------ branding --------------------------------
 const DEFAULT_BRANDING = {
   site_name: "BloodOra",
-  site_tagline: "Donate blood. Save lives.",
-  site_description: "Connecting blood donors to save lives across Bangladesh.",
+  // Localized records: `pickLocale` resolves them per visitor locale, and a
+  // real backend value (plain string or { en, bn, ar }) overrides them.
+  site_tagline: {
+    en: "Donate blood. Save lives.",
+    bn: "রক্ত দিন। জীবন বাঁচান।",
+    ar: "تبرّع بالدم. أنقذ حياة.",
+  },
+  site_description: {
+    en: "Connecting blood donors to save lives across Bangladesh.",
+    bn: "বাংলাদেশজুড়ে জীবন বাঁচাতে রক্তদাতাদের সংযুক্ত করা।",
+    ar: "نربط متبرّعي الدم لإنقاذ الأرواح في أنحاء بنغلاديش.",
+  },
   logo_file: "https://i.postimg.cc/Yh2VJ3f0/382eae28-a8b6-4e1d-b76a-a619bbc7ed06.png",
   favicon_file: "https://i.postimg.cc/NLkSJVTv/Chat-GPT-Image-Sep-13-2026-06-46-10-PM.png",
   brand_primary: "#e31b23",
@@ -100,9 +115,25 @@ export async function siteContext(req, res, next) {
   res.locals.currentLanguage = meta;
   res.locals.t = t;
   res.locals.currentPath = req.path || "/";
-  res.locals.branding = branding;
-  res.locals.settings = branding;           // views already reference `settings`
-  res.locals.siteName = branding.site_name;
+  // `branding`/`settings` are the plain-text view of the record: a localized
+  // value collapses to its English text, so admin forms can never be prefilled
+  // with "[object Object]" when the backend is unreachable.
+  const plain = (v) => (isLocalized(v) ? (v.en ?? pickLocale(v, DEFAULT_LANG)) : v);
+  const rawBranding = Object.fromEntries(Object.entries(branding).map(([k, v]) => [k, plain(v)]));
+  res.locals.branding = rawBranding;
+  res.locals.settings = rawBranding;        // views already reference `settings`
+
+  // `siteBranding` is the same record with its human-readable text resolved to
+  // the active locale — so a tagline/description stored as { en, bn, ar } by the
+  // admin follows the visitor's language. Plain strings pass through unchanged.
+  const siteBranding = {
+    ...branding,
+    site_name: pickLocale(branding.site_name, lang) || branding.site_name,
+    site_tagline: pickLocale(branding.site_tagline, lang),
+    site_description: pickLocale(branding.site_description, lang),
+  };
+  res.locals.siteBranding = siteBranding;
+  res.locals.siteName = siteBranding.site_name;
   res.locals.fontStyle = branding.brand_font_style || "calligraphic";
   next();
 }

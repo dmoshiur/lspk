@@ -7,6 +7,7 @@ import express from "express";
 import { apiGet, proxyEventStream } from "../api.js";
 import { SUPPORTED } from "../i18n.js";
 import { writeCookie } from "../middleware/site.js";
+import { localizeFromSource, localizeReference, pickLocale } from "../utils/localize.js";
 import {
   antidReference,
   compatibilityReference,
@@ -41,7 +42,7 @@ router.get("/", async (req, res) => {
 router.get("/set-language/:code", (req, res) => {
   const code = String(req.params.code || "").toLowerCase();
   if (!SUPPORTED.includes(code)) {
-    return res.status(400).render("400", { title: "Unsupported language", hint: `Supported languages: ${SUPPORTED.join(", ")}.` });
+    return res.status(400).render("400", { title: `${req.t("page_bad_lang")} - ${res.locals.siteName}`, hint: req.t("page_bad_lang_hint", { langs: SUPPORTED.join(", ") }) });
   }
   if (req.session) req.session.lang = code;
   writeCookie(res, "lang", code);
@@ -59,9 +60,18 @@ router.get("/compatibility", async (req, res) => {
     // bundled fallback rather than crashing.
     const r = d && d.reference;
     const ok = r && ["rbc", "plasma", "platelets", "components", "facts", "emergencies"].every((k) => Array.isArray(r[k]));
-    res.render("compatibility", { title, reference: ok ? d.reference : compatibilityReference, loadError: !ok });
+    res.render("compatibility", {
+      title,
+      // Resolved to the visitor's locale before the view ever sees it.
+      reference: localizeReference(ok ? r : null, compatibilityReference, res.locals.lang),
+      loadError: !ok,
+    });
   } catch (e) {
-    res.render("compatibility", { title, reference: compatibilityReference, loadError: true });
+    res.render("compatibility", {
+      title,
+      reference: localizeReference(null, compatibilityReference, res.locals.lang),
+      loadError: true,
+    });
   }
 });
 
@@ -78,14 +88,24 @@ router.get("/antid", async (req, res) => {
       r.safety && ["common", "rare", "contraindications", "storage"].every((k) => Array.isArray(r.safety[k]));
     res.render("antid", {
       title,
-      reference: ok ? r : antidReference,
+      // Resolved to the visitor's locale before the view ever sees it, whether
+      // the payload came from the API/CMS or from the bundled fallback.
+      reference: localizeReference(ok ? r : null, antidReference, res.locals.lang),
       antid_info: d.antid_info || [],
-      entries: d.entries || [],
+      // Admin-managed entries have no bundled twin: translate what we know,
+      // keep genuinely new CMS text as authored (and warn about it in dev).
+      entries: localizeFromSource(d.entries || [], antidReference, res.locals.lang),
       loadError: !ok,
     });
   } catch (e) {
     // Never show an empty Anti-D page: fall back to the built-in reference.
-    res.render("antid", { title, reference: antidReference, antid_info: [], entries: [], loadError: true });
+    res.render("antid", {
+      title,
+      reference: localizeReference(null, antidReference, res.locals.lang),
+      antid_info: [],
+      entries: [],
+      loadError: true,
+    });
   }
 });
 
@@ -93,15 +113,38 @@ router.get("/antid", async (req, res) => {
 router.get("/resources", async (req, res) => {
   const title = `${req.t('nav_education')} - ${res.locals.siteName}`;
   const query = { category: req.query.category, q: req.query.q };
+  const lang = res.locals.lang;
+  const toCard = (r, i, source) => {
+    const localized = localizeFromSource(r, resourcesReference, lang);
+    return {
+      id: localized.id ?? `base-${i}`,
+      title: localized.title,
+      category: localized.category,
+      content: localized.content,
+      summary: localized.summary,
+      read_time: String(localized.read_time ?? localized.readTime ?? "3").replace(/\s*mins?\s*$/i, ""),
+      is_featured: !!localized.is_featured,
+      source,
+    };
+  };
   try {
     const d = await apiGet("/api/meta/resources", null, query);
-    res.render("resources", { title, resources: d.resources, categories: d.categories, query, loadError: false });
+    res.render("resources", {
+      title,
+      resources: (d.resources || []).map((r, i) => toCard(r, i, r.source || "database")),
+      categories: d.categories,
+      query,
+      loadError: false,
+    });
   } catch (e) {
     const cat = req.query.category;
+    // Filter on the canonical English key, then localize. The <option> list is
+    // resolved the same way so it can never print a raw translation record.
     const resources = resourcesReference
       .filter((r) => !cat || r.category === cat)
-      .map((r, i) => ({ id: `base-${i}`, title: r.title, category: r.category, content: r.content, summary: r.summary, read_time: r.readTime, is_featured: i < 4, source: "core" }));
-    res.render("resources", { title, resources, categories: [...new Set(resourcesReference.map((r) => r.category))], query, loadError: true });
+      .map((r, i) => toCard(r, i, "core"));
+    const categories = [...new Set(resourcesReference.map((r) => pickLocale(r.category, lang)))];
+    res.render("resources", { title, resources, categories, query, loadError: true });
   }
 });
 

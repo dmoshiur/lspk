@@ -1,13 +1,15 @@
 <%
   const _t   = (typeof t === 'function') ? t : (k) => k;
-  const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
   const _q   = (typeof query !== 'undefined' && query) ? query : {};
   const _cats= (typeof categories !== 'undefined' && categories) ? categories : [];
   const _rs  = (typeof resources !== 'undefined' && resources) ? resources : [];
-  const _bn  = (lang === 'bn');
-  const _ar  = (lang === 'ar');
   const CAT_ICON = { 'Donation':'fa-hand-holding-heart', 'Education':'fa-graduation-cap', 'First-Aid':'fa-kit-medical', 'Health':'fa-heart-pulse' };
   const CAT_COLOR= { 'Donation':'#dc2626', 'Education':'#0284c7', 'First-Aid':'#d97706', 'Health':'#16a34a' };
+  // The stored category is the canonical English key (it drives the URL filter
+  // and the maps above); the visitor sees the translated label instead.
+  const CAT_KEY  = { 'Donation':'res_cat_donation', 'Education':'res_cat_education', 'First-Aid':'res_cat_first_aid', 'Health':'res_cat_health' };
+  const catLabel = (c) => CAT_KEY[c] ? _t(CAT_KEY[c]) : (c ? c : _t('res_cat_general'));
+  const _mins = (v) => String(v == null || v === '' ? '3' : v).replace(/\s*mins?\s*$/i, '');
 %>
 <%- include('partials/header') %>
 
@@ -32,14 +34,14 @@
           <select name="category" class="form-select" onchange="this.form.submit()">
             <option value=""><%= _t('res_all_cats') %></option>
             <% _cats.forEach(function(c){ %>
-              <option value="<%= _esc(c) %>" <%= _q.category===c ? 'selected' : '' %>><%= _esc(c) %></option>
+              <option value="<%= c %>" <%= _q.category===c ? 'selected' : '' %>><%= catLabel(c) %></option>
             <% }) %>
           </select>
         </div>
         <div class="col-md-6">
           <div class="input-group">
             <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-            <input type="text" name="q" class="form-control" value="<%= _esc(_q.q || '') %>" placeholder="<%= _t('res_search_ph') %>">
+            <input type="text" name="q" class="form-control" value="<%= _q.q || '' %>" placeholder="<%= _t('res_search_ph') %>">
           </div>
         </div>
         <div class="col-md-2 d-grid"><button class="btn btn-danger"><i class="fas fa-filter me-1"></i><%= _t('common_search') %></button></div>
@@ -52,7 +54,7 @@
       <a href="/resources" class="btn btn-sm <%= !_q.category ? 'btn-danger':'btn-outline-danger' %> rounded-pill"><%= _t('common_all') %></a>
       <% _cats.forEach(function(c){ %>
         <a href="/resources?category=<%= encodeURIComponent(c) %>" class="btn btn-sm <%= _q.category===c ? 'btn-danger':'btn-outline-danger' %> rounded-pill">
-          <i class="fas <%= CAT_ICON[c] || 'fa-book' %> me-1"></i><%= _esc(c) %>
+          <i class="fas <%= CAT_ICON[c] || 'fa-book' %> me-1"></i><%= catLabel(c) %>
         </a>
       <% }) %>
     </div>
@@ -67,27 +69,27 @@
             <div class="card-body p-4 d-flex flex-column">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="badge" style="background:color-mix(in srgb, <%= CAT_COLOR[r.category] || '#64748b' %> 12%, #fff); color:<%= CAT_COLOR[r.category] || '#64748b' %>; border:1px solid color-mix(in srgb, <%= CAT_COLOR[r.category] || '#64748b' %> 28%, transparent);">
-                  <i class="fas <%= CAT_ICON[r.category] || 'fa-book' %> me-1"></i><%= _esc(r.category || 'General') %>
+                  <i class="fas <%= CAT_ICON[r.category] || 'fa-book' %> me-1"></i><%= catLabel(r.category) %>
                 </span>
                 <% if (r.is_featured) { %><span class="badge bg-warning text-dark"><i class="fas fa-crown me-1"></i><%= _t('common_featured') %></span><% } %>
               </div>
 
-              <h5 class="fw-bold mb-2" style="font-family:var(--font-display); font-size:1.18rem; line-height:1.3;"><%= _esc(r.title) %></h5>
+              <h5 class="fw-bold mb-2" style="font-family:var(--font-display); font-size:1.18rem; line-height:1.3;"><%= r.title %></h5>
 
-              <% if (r.summary) { %><p class="small text-muted mb-2 fst-italic" style="line-height:1.6;"><%= _esc(r.summary) %></p><% } %>
+              <% if (r.summary) { %><p class="small text-muted mb-2 fst-italic" style="line-height:1.6;"><%= r.summary %></p><% } %>
 
-              <p class="small mb-3" style="color:#475569; line-height:1.72; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden;"><%= _esc(r.content) %></p>
+              <p class="small mb-3" style="color:#475569; line-height:1.72; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden;"><%= r.content %></p>
 
               <div class="mt-auto">
                 <div class="d-flex align-items-center justify-content-between small text-muted mb-2">
-                  <span><i class="fas fa-clock me-1"></i><%= _esc(r.read_time || '3 min') %> <%= _t('common_minutes') %></span>
-                  <% if (r.source === 'database') { %><span class="badge bg-light text-dark border" style="font-size:.62rem;">Admin</span><% } %>
+                  <span><i class="fas fa-clock me-1"></i><%= _mins(r.read_time) %> <%= _t('common_minutes') %></span>
+                  <% if (r.source === 'database') { %><span class="badge bg-light text-dark border" style="font-size:.62rem;"><%= _t('res_admin_badge') %></span><% } %>
                 </div>
                 <button class="btn btn-sm btn-outline-danger w-100" type="button" data-bs-toggle="collapse" data-bs-target="#res-<%= String(r.id).replace(/[^a-z0-9]/gi,'') %>">
                   <i class="fas fa-book-open me-1"></i><%= _t('common_read_more') %>
                 </button>
                 <div class="collapse mt-2" id="res-<%= String(r.id).replace(/[^a-z0-9]/gi,'') %>">
-                  <div class="p-3 rounded-4 small" style="background:#f8fafc; border:1px solid #e2e8f0; line-height:1.78; color:#334155;"><%= _esc(r.content) %></div>
+                  <div class="p-3 rounded-4 small" style="background:#f8fafc; border:1px solid #e2e8f0; line-height:1.78; color:#334155;"><%= r.content %></div>
                 </div>
               </div>
             </div>

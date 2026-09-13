@@ -1,7 +1,7 @@
 <%
   // ---- local helpers -------------------------------------------------------
   const _t   = (typeof t === 'function') ? t : (k) => k;
-  const _b   = (typeof branding !== 'undefined' && branding) ? branding : {};
+  const _b   = (typeof siteBranding !== 'undefined' && siteBranding) ? siteBranding : ((typeof branding !== 'undefined' && branding) ? branding : {});
   const _s   = _b;
   const _dir = (typeof dir !== 'undefined' && dir) ? dir : 'ltr';
   const _lang= (typeof lang !== 'undefined' && lang) ? lang : 'en';
@@ -36,7 +36,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= typeof title !== 'undefined' ? title : (_name + ' — ' + (_t('home_hero_title'))) %></title>
-  <meta name="description" content="<%= _b.site_description || 'Bangladesh blood donation network and medical shop.' %>">
+  <meta name="description" content="<%= _b.site_description || _t('site_meta_description') %>">
   <meta name="theme-color" content="<%= _p %>">
 
   <!-- Identity: both are Admin-manageable from /admin/branding -->
@@ -247,12 +247,12 @@
   <!-- ================= Navbar ================= -->
   <nav class="navbar navbar-expand-lg sticky-top" aria-label="<%= _t('nav_home') %>">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="/">
+      <!-- The logo artwork already carries the BloodOra wordmark, so the header
+           renders the image alone — a separate name beside it was a duplicate.
+           `_name` stays as the image's alt/title text for screen readers. -->
+      <a class="navbar-brand d-flex align-items-center" href="/" title="<%= _name %>">
         <img src="<%= _logo %>" alt="<%= _name %>" onerror="this.style.display='none'">
-        <span class="brand-stack">
-          <span><%= _name %></span>
-          <% if (_tag) { %><span class="brand-tag d-none d-xl-inline"><%= _tag %></span><% } %>
-        </span>
+        <% if (_tag) { %><span class="brand-stack"><span class="brand-tag d-none d-xl-inline"><%= _tag %></span></span><% } %>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="<%= _t('nav_menu') %>">
         <span class="navbar-toggler-icon"></span>

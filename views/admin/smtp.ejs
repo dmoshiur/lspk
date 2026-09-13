@@ -2,7 +2,8 @@
 <%
   const _s = (typeof settings !== 'undefined' && settings) ? settings : {};
   const _logs = (typeof logs !== 'undefined' && logs) ? logs : [];
-  const _esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const PRESETS = [
     ['Gmail / Google Workspace', 'smtp.gmail.com', 587, 0, 'Use an App Password (Google → Security → 2-Step Verification → App passwords), not your normal password.'],
     ['Outlook / Microsoft 365', 'smtp.office365.com', 587, 0, 'Enable SMTP AUTH for the mailbox in the Microsoft 365 admin centre.'],
@@ -50,14 +51,14 @@
                   <div class="form-text" id="preset-note">Selecting a preset fills the host, port and TLS fields.</div>
                 </div>
 
-                <div class="col-md-8"><label class="form-label">SMTP host</label><input name="smtp_host" id="f_host" class="form-control" value="<%= _esc(_s.smtp_host) %>" placeholder="smtp.gmail.com"></div>
+                <div class="col-md-8"><label class="form-label">SMTP host</label><input name="smtp_host" id="f_host" class="form-control" value="<%= _s.smtp_host %>" placeholder="smtp.gmail.com"></div>
                 <div class="col-md-4"><label class="form-label">Port</label><input name="smtp_port" id="f_port" type="number" class="form-control" value="<%= _s.smtp_port || 587 %>"></div>
 
-                <div class="col-md-6"><label class="form-label">Username</label><input name="smtp_user" class="form-control" value="<%= _esc(_s.smtp_user) %>" autocomplete="off"></div>
+                <div class="col-md-6"><label class="form-label">Username</label><input name="smtp_user" class="form-control" value="<%= _s.smtp_user %>" autocomplete="off"></div>
                 <div class="col-md-6">
                   <label class="form-label">Password / API key</label>
                   <div class="input-group">
-                    <input name="smtp_pass" id="f_pass" type="password" class="form-control" value="<%= _esc(_s.smtp_pass) %>" autocomplete="new-password">
+                    <input name="smtp_pass" id="f_pass" type="password" class="form-control" value="<%= _s.smtp_pass %>" autocomplete="new-password">
                     <button class="btn btn-light border" type="button" onclick="var p=document.getElementById('f_pass'); p.type = p.type==='password'?'text':'password';"><i class="fas fa-eye"></i></button>
                   </div>
                   <div class="form-text">Leave as-is to keep the stored password. Clear the field to remove it.</div>
@@ -78,8 +79,8 @@
                 </div>
 
                 <div class="col-12"><hr><h6 class="fw-bold mb-2"><i class="fas fa-signature me-2 text-danger"></i>From address</h6></div>
-                <div class="col-md-5"><label class="form-label">From name</label><input name="smtp_from_name" class="form-control" value="<%= _esc(_s.smtp_from_name) %>"></div>
-                <div class="col-md-7"><label class="form-label">From email</label><input name="smtp_from_email" type="email" class="form-control" value="<%= _esc(_s.smtp_from_email) %>" placeholder="no-reply@yourdomain.com"></div>
+                <div class="col-md-5"><label class="form-label">From name</label><input name="smtp_from_name" class="form-control" value="<%= _s.smtp_from_name %>"></div>
+                <div class="col-md-7"><label class="form-label">From email</label><input name="smtp_from_email" type="email" class="form-control" value="<%= _s.smtp_from_email %>" placeholder="no-reply@yourdomain.com"></div>
 
                 <div class="col-12 d-flex gap-2 flex-wrap">
                   <button type="submit" class="btn btn-danger rounded-pill px-4"><i class="fas fa-save me-1"></i>Save SMTP settings</button>
@@ -96,7 +97,7 @@
               <h6 class="fw-bold mb-2"><i class="fas fa-paper-plane me-2 text-danger"></i>Send a test email</h6>
               <p class="small text-muted">Runs a real <code>transport.verify()</code> then sends a message, and reports the exact server error if it fails.</p>
               <form method="POST" action="/admin/smtp/test" class="d-grid gap-2">
-                <input name="to" type="email" class="form-control" placeholder="recipient@example.com" value="<%= _esc(_s.smtp_from_email) %>">
+                <input name="to" type="email" class="form-control" placeholder="recipient@example.com" value="<%= _s.smtp_from_email %>">
                 <button class="btn btn-dark rounded-pill"><i class="fas fa-vial-circle-check me-1"></i>Send test</button>
               </form>
             </div>
@@ -130,10 +131,10 @@
                   <% _logs.slice(0,40).forEach(function(l){ %>
                     <tr>
                       <td class="small text-nowrap"><%= String(l.created_at||'').slice(0,19).replace('T',' ') %></td>
-                      <td class="small"><%= _esc(l.to_email) %></td>
-                      <td class="small"><%= _esc(l.subject) %></td>
-                      <td><span class="badge <%= l.status==='sent' ? 'bg-success' : 'bg-danger' %>"><%= _esc(l.status) %></span></td>
-                      <td class="small text-danger"><%= _esc(l.error || '') %></td>
+                      <td class="small"><%= l.to_email %></td>
+                      <td class="small"><%= l.subject %></td>
+                      <td><span class="badge <%= l.status==='sent' ? 'bg-success' : 'bg-danger' %>"><%= l.status %></span></td>
+                      <td class="small text-danger"><%= l.error || '' %></td>
                     </tr>
                   <% }) %>
                 </tbody>

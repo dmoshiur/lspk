@@ -1,6 +1,7 @@
 <%
   const _t   = (typeof t === 'function') ? t : (k) => k;
-  const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const _num = (n) => { if (lang !== 'bn') return String(n); const b=['০','১','২','৩','৪','৫','৬','৭','৮','৯']; return String(n).replace(/\d/g,d=>b[d]); };
   const _stars = (n) => { const f = Math.max(0, Math.min(5, Number(n) || 0)); return '★'.repeat(Math.round(f)) + '☆'.repeat(5 - Math.round(f)); };
   const _q = (typeof query !== 'undefined' && query) ? query : {};
@@ -48,7 +49,7 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h5 class="fw-bold mb-0"><i class="fas fa-pen-nib me-2 text-danger"></i><%= _t('rev_write') %></h5>
             <% if (_isLogged) { %>
-              <span class="badge bg-success rounded-pill"><i class="fas fa-circle-check me-1"></i><%= _esc(currentUser.name) %></span>
+              <span class="badge bg-success rounded-pill"><i class="fas fa-circle-check me-1"></i><%= currentUser.name %></span>
             <% } else { %>
               <span class="badge bg-light text-dark border rounded-pill"><i class="fas fa-lock me-1"></i><%= _t('rev_login_first') %></span>
             <% } %>
@@ -64,7 +65,7 @@
               <select name="product_id" class="form-select">
                 <option value=""><%= _t('rev_general_test') %></option>
                 <% (products || []).forEach(function(p){ %>
-                  <option value="<%= p.id %>"><%= _esc(p.name) %> — ৳<%= p.price %></option>
+                  <option value="<%= p.id %>"><%= p.name %> — ৳<%= p.price %></option>
                 <% }) %>
               </select>
               <div class="form-text small"><%= _t('rev_order_req') %></div>
@@ -123,7 +124,7 @@
                     <img src="https://ui-avatars.com/api/?background=e31b23&color=fff&size=64&bold=true&name=<%= encodeURIComponent(r.user_name || r.author_name || 'R') %>" alt="<%= r.user_name || 'User' %>" style="width:38px;height:38px;border-radius:50%;">
                   <% } %>
                   <div>
-                    <div class="fw-bold" style="font-size:.92rem;"><%= _esc(r.user_name || r.author_name || 'Anonymous') %></div>
+                    <div class="fw-bold" style="font-size:.92rem;"><%= r.user_name || r.author_name || 'Anonymous' %></div>
                     <div class="small text-muted"><%= r.created_at ? String(r.created_at).slice(0,10) : '' %></div>
                   </div>
                 </div>
@@ -133,12 +134,12 @@
                 </div>
               </div>
 
-              <h6 class="fw-bold mb-2" style="font-family:var(--font-display); font-size:1.12rem;"><%= _esc(r.title || _t('rev_title')) %></h6>
-              <p class="text-muted small mb-2" style="line-height:1.65;"><%= _esc(r.body) %></p>
+              <h6 class="fw-bold mb-2" style="font-family:var(--font-display); font-size:1.12rem;"><%= r.title || _t('rev_title') %></h6>
+              <p class="text-muted small mb-2" style="line-height:1.65;"><%= r.body %></p>
 
               <div class="d-flex flex-wrap gap-2">
                 <% if (r.kind === 'product') { %>
-                  <a href="/shop/product/<%= r.product_id %>" class="badge text-bg-light border text-decoration-none"><i class="fas fa-bag-shopping me-1 text-danger"></i><%= _esc(r.product_name || 'Product') %></a>
+                  <a href="/shop/product/<%= r.product_id %>" class="badge text-bg-light border text-decoration-none"><i class="fas fa-bag-shopping me-1 text-danger"></i><%= r.product_name || 'Product' %></a>
                 <% } else { %>
                   <span class="badge text-bg-light border"><i class="fas fa-heart me-1 text-danger"></i><%= _t('rev_site') %></span>
                 <% } %>
@@ -147,7 +148,7 @@
               <% if (r.admin_reply) { %>
                 <div class="mt-3 p-3 rounded-4" style="background:#f8fafc; border:1px solid #e2e8f0;">
                   <div class="small fw-bold text-danger mb-1"><i class="fas fa-reply me-1"></i><%= _t('rev_official') %></div>
-                  <div class="small text-muted"><%= _esc(r.admin_reply) %></div>
+                  <div class="small text-muted"><%= r.admin_reply %></div>
                 </div>
               <% } %>
             </div>

@@ -1,12 +1,13 @@
 <%- include('../partials/header') %>
 <%
   const _t2 = (typeof t === 'function') ? t : (k) => k;
-  const _esc2 = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const _num = (n) => { if (lang !== 'bn') return String(n); const b=['০','১','২','৩','৪','৫','৬','৭','৮','৯']; return String(n).replace(/\d/g,d=>b[d]); };
   const stLabel = { pending: _t2('st_pending'), processing: _t2('st_processing'), completed: _t2('st_completed'), cancelled: _t2('st_cancelled') };
   const stClass = { pending: 'bg-warning text-dark', processing: 'bg-info', completed: 'bg-success', cancelled: 'bg-secondary' };
   const fmtDate = (v) => { try { return new Date(String(v).includes('T') ? v : String(v).replace(' ','T') + 'Z').toLocaleDateString(); } catch(e){ return String(v||'').slice(0,10); } };
-  const sectionError = (msg) => `<div class="alert alert-light border small rounded-4 mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>${_esc2(msg || '')} <a href="javascript:location.reload()" class="fw-bold">${_esc2(_t2('common_retry'))}</a></div>`;
+  const sectionError = (msg) => `<div class="alert alert-light border small rounded-4 mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>${msg || ''} <a href="javascript:location.reload()" class="fw-bold">${_t2('common_retry')}</a></div>`;
 %>
 <style>
   .dash-stat{ background:#fff; border-radius:18px; padding:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(15,23,42,.06); display:flex; align-items:center; gap:14px; height:100%; }
@@ -100,8 +101,8 @@
                     <a href="/blood-request/<%= r.id %>" class="activity-item">
                       <div class="activity-icon tone-danger"><i class="fas fa-tint"></i></div>
                       <div style="min-width:0;">
-                        <div class="fw-bold" style="font-size:.9rem;"><%= r.blood_group %> • <%= _esc2(r.patient_name) %> <% if (r.is_urgent) { %><span class="badge bg-danger rounded-pill ms-1"><%= _t2('st_urgent') %></span><% } %></div>
-                        <div class="small text-muted text-truncate"><i class="fas fa-hospital me-1"></i><%= _esc2(r.hospital_name) %> • <%= fmtDate(r.created_at) %></div>
+                        <div class="fw-bold" style="font-size:.9rem;"><%= r.blood_group %> • <%= r.patient_name %> <% if (r.is_urgent) { %><span class="badge bg-danger rounded-pill ms-1"><%= _t2('st_urgent') %></span><% } %></div>
+                        <div class="small text-muted text-truncate"><i class="fas fa-hospital me-1"></i><%= r.hospital_name %> • <%= fmtDate(r.created_at) %></div>
                       </div>
                       <span class="badge <%= r.is_fulfilled ? 'bg-success' : r.is_cancelled ? 'bg-secondary' : 'bg-warning text-dark' %> rounded-pill ms-auto"><%= r.is_fulfilled ? _t2('st_fulfilled') : r.is_cancelled ? _t2('st_cancelled') : _t2('st_active') %></span>
                     </a>
@@ -153,8 +154,8 @@
                     <a href="/messages/read/<%= m.id %>" class="activity-item">
                       <div class="activity-icon tone-info"><i class="fas fa-envelope"></i></div>
                       <div style="min-width:0;">
-                        <div class="fw-bold text-truncate" style="font-size:.88rem;"><%= _esc2(m.subject || _t2('msg_title')) %><% if (!m.is_read) { %> <span class="badge bg-danger rounded-pill">●</span><% } %></div>
-                        <div class="small text-muted text-truncate"><%= _esc2(m.sender_name || '') %> • <%= fmtDate(m.created_at || m.sent_at) %></div>
+                        <div class="fw-bold text-truncate" style="font-size:.88rem;"><%= m.subject || _t2('msg_title') %><% if (!m.is_read) { %> <span class="badge bg-danger rounded-pill">●</span><% } %></div>
+                        <div class="small text-muted text-truncate"><%= m.sender_name || '' %> • <%= fmtDate(m.created_at || m.sent_at) %></div>
                       </div>
                     </a>
                   <% }) %>

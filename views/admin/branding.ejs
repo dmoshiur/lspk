@@ -1,7 +1,8 @@
 <%- include('../partials/header') %>
 <%
   const _s = (typeof settings !== 'undefined' && settings) ? settings : {};
-  const _esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // EJS's escaped output tag escapes exactly once. The old local escaper ran on
+  // top of it and leaked literal &#39; / &amp; sequences into the rendered page.
   const FONTS = [
     ['calligraphic', 'Calligraphic', 'Cormorant Garamond + Great Vibes — elegant display type with a script tagline'],
     ['serif', 'Serif', 'Cormorant Garamond headings with the same body face'],
@@ -38,7 +39,7 @@
                   <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-control">
                   <div class="mt-2 p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;">
                     <img id="logo-preview" src="/<%= _s.logo_file || 'logo.png' %>" style="max-height:64px; max-width:100%;" onerror="this.style.opacity=.25">
-                    <div class="small text-muted mt-1">Current: <code><%= _esc(_s.logo_file || 'logo.png') %></code></div>
+                    <div class="small text-muted mt-1">Current: <code><%= _s.logo_file || 'logo.png' %></code></div>
                   </div>
                 </div>
 
@@ -47,28 +48,28 @@
                   <input type="file" name="favicon" accept="image/png,image/x-icon,image/svg+xml,image/jpeg" class="form-control">
                   <div class="mt-2 p-3 rounded-4 text-center" style="background:#f8fafc; border:1px solid #e2e8f0;">
                     <img id="fav-preview" src="/<%= _s.favicon_file || 'favicon.ico' %>" style="width:48px; height:48px; object-fit:contain;" onerror="this.style.opacity=.25">
-                    <div class="small text-muted mt-1">Current: <code><%= _esc(_s.favicon_file || 'favicon.ico') %></code></div>
+                    <div class="small text-muted mt-1">Current: <code><%= _s.favicon_file || 'favicon.ico' %></code></div>
                   </div>
                 </div>
 
                 <div class="col-12"><hr><h6 class="fw-bold mb-2"><i class="fas fa-signature me-2 text-danger"></i>Identity</h6></div>
-                <div class="col-md-6"><label class="form-label">Site name</label><input name="site_name" class="form-control" value="<%= _esc(_s.site_name) %>" required></div>
-                <div class="col-md-6"><label class="form-label">Tagline <span class="text-muted small">(shown under the logo, in the footer, in the browser title)</span></label><input name="site_tagline" class="form-control" value="<%= _esc(_s.site_tagline) %>"></div>
-                <div class="col-12"><label class="form-label">Description <span class="text-muted small">(meta description + footer)</span></label><textarea name="site_description" class="form-control" rows="2"><%= _esc(_s.site_description) %></textarea></div>
+                <div class="col-md-6"><label class="form-label">Site name</label><input name="site_name" class="form-control" value="<%= _s.site_name %>" required></div>
+                <div class="col-md-6"><label class="form-label">Tagline <span class="text-muted small">(shown under the logo, in the footer, in the browser title)</span></label><input name="site_tagline" class="form-control" value="<%= _s.site_tagline %>"></div>
+                <div class="col-12"><label class="form-label">Description <span class="text-muted small">(meta description + footer)</span></label><textarea name="site_description" class="form-control" rows="2"><%= _s.site_description %></textarea></div>
 
                 <div class="col-12"><hr><h6 class="fw-bold mb-2"><i class="fas fa-droplet me-2 text-danger"></i>Brand colours</h6></div>
                 <div class="col-md-6">
                   <label class="form-label">Primary <span class="text-muted small">(#RRGGBB)</span></label>
                   <div class="input-group">
-                    <input type="color" class="form-control p-1" style="max-width:64px;" id="cp1" value="<%= _esc(_s.brand_primary || '#e31b23') %>">
-                    <input name="brand_primary" class="form-control" id="brand_primary" value="<%= _esc(_s.brand_primary || '#e31b23') %>" pattern="^#[0-9a-fA-F]{6}$">
+                    <input type="color" class="form-control p-1" style="max-width:64px;" id="cp1" value="<%= _s.brand_primary || '#e31b23' %>">
+                    <input name="brand_primary" class="form-control" id="brand_primary" value="<%= _s.brand_primary || '#e31b23' %>" pattern="^#[0-9a-fA-F]{6}$">
                   </div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Accent <span class="text-muted small">(gradient end)</span></label>
                   <div class="input-group">
-                    <input type="color" class="form-control p-1" style="max-width:64px;" id="cp2" value="<%= _esc(_s.brand_accent || '#ff3340') %>">
-                    <input name="brand_accent" class="form-control" id="brand_accent" value="<%= _esc(_s.brand_accent || '#ff3340') %>" pattern="^#[0-9a-fA-F]{6}$">
+                    <input type="color" class="form-control p-1" style="max-width:64px;" id="cp2" value="<%= _s.brand_accent || '#ff3340' %>">
+                    <input name="brand_accent" class="form-control" id="brand_accent" value="<%= _s.brand_accent || '#ff3340' %>" pattern="^#[0-9a-fA-F]{6}$">
                   </div>
                 </div>
 
@@ -106,11 +107,11 @@
                 <div class="d-flex align-items-center gap-2 pb-2" style="border-bottom:1px solid #e2e8f0;">
                   <img id="nav-logo" src="/<%= _s.logo_file || 'logo.png' %>" style="height:36px;" onerror="this.style.opacity=.2">
                   <div>
-                    <div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem; color:var(--primary);" id="pv-name"><%= _esc(_s.site_name) %></div>
-                    <div class="script-accent" style="font-size:.9rem; color:#64748b;" id="pv-tag"><%= _esc(_s.site_tagline) %></div>
+                    <div class="fw-bold" style="font-family:var(--font-display); font-size:1.3rem; color:var(--primary);" id="pv-name"><%= _s.site_name %></div>
+                    <div class="script-accent" style="font-size:.9rem; color:#64748b;" id="pv-tag"><%= _s.site_tagline %></div>
                   </div>
                 </div>
-                <div class="mt-3 rounded-4 p-3 text-center" id="pv-hero" style="background:linear-gradient(135deg,<%= _esc(_s.brand_primary||'#e31b23') %>,<%= _esc(_s.brand_accent||'#ff3340') %>); color:#fff;">
+                <div class="mt-3 rounded-4 p-3 text-center" id="pv-hero" style="background:linear-gradient(135deg,<%= _s.brand_primary||'#e31b23' %>,<%= _s.brand_accent||'#ff3340' %>); color:#fff;">
                   <div style="font-family:var(--font-display); font-size:1.5rem; font-weight:700;">Hero headline</div>
                   <div class="small" style="opacity:.92;">Buttons and highlights use your primary colour</div>
                   <div class="mt-2"><span class="btn btn-light btn-sm rounded-pill">Primary action</span></div>

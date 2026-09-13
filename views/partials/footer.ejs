@@ -1,6 +1,6 @@
 <%
   const _t   = (typeof t === 'function') ? t : (k) => k;
-  const _b   = (typeof branding !== 'undefined' && branding) ? branding : {};
+  const _b   = (typeof siteBranding !== 'undefined' && siteBranding) ? siteBranding : ((typeof branding !== 'undefined' && branding) ? branding : {});
   const _s   = _b;
   const _dir = (typeof dir !== 'undefined' && dir) ? dir : 'ltr';
   const _lang= (typeof lang !== 'undefined' && lang) ? lang : 'en';
@@ -27,10 +27,11 @@
       <div class="row g-4">
         <div class="col-lg-4">
           <h5 class="d-flex align-items-center gap-2">
-            <img src="<%= _logo %>" alt="<%= _name %>" style="height:38px;" onerror="this.style.display='none'"><%= _name %>
+            <% /* logo artwork already contains the BloodOra wordmark — no duplicate text */ %>
+            <img src="<%= _logo %>" alt="<%= _name %>" style="height:38px;" onerror="this.style.display='none'">
           </h5>
           <% if (_b.site_tagline) { %><p class="script-accent mt-2 mb-0" style="color:#f1a4ab; font-size:1.15rem;"><%= _b.site_tagline %></p><% } %>
-          <p class="mt-2" style="color:#94a3b8; max-width:38ch;"><%= _b.site_description || "Bangladesh's smart blood donation platform — connecting verified donors, urgent requests, and a complete medical shop in one place." %></p>
+          <p class="mt-2" style="color:#94a3b8; max-width:38ch;"><%= _b.site_description || _t('site_default_description') %></p>
           <div class="social-icons mt-3">
             <a href="<%= _s.facebook_url && _s.facebook_url !== '#' ? _s.facebook_url : '#' %>" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
             <a href="<%= _s.twitter_url && _s.twitter_url !== '#' ? _s.twitter_url : '#' %>" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
