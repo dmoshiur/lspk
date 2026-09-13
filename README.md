@@ -107,8 +107,14 @@ Open http://localhost:3000 — the first registered user becomes Super Admin
 
 - Backend issues **JWTs** on register/login (7-day expiry) bound to a DB
   session token → single active session per user (same behaviour as before).
-- The frontend stores the JWT in its server-side session and sends it as
+- The frontend stores the JWT in its session and sends it as
   `Authorization: Bearer <token>` on every API call.
+- The frontend session is **stateless**: it lives in a gzip-compressed,
+  HMAC-signed `bloodora.session` cookie (`src/middleware/cookieStore.js`)
+  instead of express-session's in-memory store. Serverless functions are
+  short-lived and not shared, so an in-memory store would log users out at
+  random and leaks memory. Nothing sensitive is trusted from the client — the
+  cookie cannot be read or altered without `SESSION_SECRET`.
 - Admin routes require `is_admin`, super-admin routes `is_super_admin`.
 - Impersonation: super admin gets a token for the target user; the frontend
   keeps the admin token to switch back.
@@ -135,6 +141,13 @@ Open http://localhost:3000 — the first registered user becomes Super Admin
 
 ## ⚠️ Production notes
 
+- `server.js` must keep its `export default function handler(req, res)`. That
+  default export is what `@vercel/node` invokes; without it every request fails
+  with *"Invalid export found in module /var/task/server.js"*. `app.listen()`
+  runs only for `node server.js` locally.
+- `vercel.json` ships `views/**`, `public/**` and `src/**` into the function via
+  `includeFiles` — EJS templates are read from disk at runtime, so a missing
+  entry there shows up as a 500 on every page.
 - Always set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` on the backend —
   without them Vercel falls back to an **ephemeral** /tmp SQLite (dev only).
 - Uploaded images live on the backend function filesystem (`/tmp/uploads` on
