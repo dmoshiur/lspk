@@ -34,6 +34,23 @@ export function sessionContext(req, res, next) {
   requestContext.run({ req, res }, next);
 }
 
+/**
+ * Mount AFTER express-session. Multipart parsers may invoke their completion
+ * callback from a stream resource created outside AsyncLocalStorage. Re-enter
+ * this request's context when express-session persists the response so a
+ * successful registration/profile POST cannot silently lose its cookie.
+ */
+export function sessionResponseContext(req, res, next) {
+  const context = { req, res };
+  for (const method of ["end", "write", "writeHead"]) {
+    const original = res[method];
+    res[method] = function (...args) {
+      return requestContext.run(context, () => original.apply(this, args));
+    };
+  }
+  next();
+}
+
 function sign(payload, secret) {
   return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
 }

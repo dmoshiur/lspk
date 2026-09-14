@@ -8,6 +8,7 @@ import { invalidateBranding } from "../middleware/site.js";
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 const router = express.Router();
+router.get("/dashboard", requireAdmin, (req, res) => res.redirect("/admin"));
 
 function flashFrom(req, d, fallback) {
   req.session.flash = { type: d.type || "success", message: d.message || fallback };
@@ -20,17 +21,18 @@ router.get("/", requireAdmin, async (req, res) => {
   const token = req.session.token;
   try {
     const [d, ordersR, activityR, supportR, messagesR] = await Promise.all([
-      apiGet("/api/admin/dashboard", token),
+      apiGet("/api/admin/dashboard", token).catch((e) => ({ __err: e })),
       apiGet("/api/admin/orders", token).catch((e) => ({ __err: e })),
       apiGet("/api/admin/activity", token).catch((e) => ({ __err: e })),
       apiGet("/api/support/admin/sessions", token).catch((e) => ({ __err: e })),
       apiGet("/api/messages/admin/list", token).catch((e) => ({ __err: e })),
     ]);
     const allUsers = d.all_users || [];
+    const overviewOk = !d.__err && !!d.stats;
     res.render("admin/dashboard", {
       title: `${req.t("adm_dashboard")} - ${res.locals.siteName}`,
-      all_users: allUsers, stats: d.stats,
-      current_notice: d.current_notice, settings: d.settings, now: new Date(),
+      all_users: allUsers, stats: d.stats || {}, overviewOk,
+      current_notice: d.current_notice || "", settings: d.settings || res.locals.branding, now: new Date(),
       // real aggregates for the side panels:
       recent_orders: ordersR.__err ? { ok: false, list: [] } : { ok: true, list: (ordersR.orders || []).slice(0, 5), revenue: (ordersR.orders || []).reduce((s, o) => s + (Number(o.total_amount) || 0), 0), paid: (ordersR.orders || []).filter((o) => String(o.payment_status || "").toLowerCase() === "confirmed").length },
       activity: activityR.__err ? { ok: false, list: [] } : { ok: true, list: (activityR.events || []).slice(0, 8) },
@@ -41,8 +43,7 @@ router.get("/", requireAdmin, async (req, res) => {
     });
   } catch (e) {
     console.error(e.message);
-    req.session.flash = { type: "danger", message: "❌ Dashboard failed to load." };
-    res.redirect("/");
+    res.status(502).render("admin/unavailable", { title: req.t("adm_dashboard") });
   }
 });
 
@@ -61,8 +62,7 @@ router.get("/users", requireAdmin, async (req, res) => {
       all_users: d.all_users || [], stats: d.stats,
     });
   } catch (e) {
-    req.session.flash = { type: "danger", message: e.message || "❌ Could not load users." };
-    res.redirect("/admin");
+    res.status(502).render("admin/unavailable", { title: req.t("adm_users") });
   }
 });
 
@@ -71,7 +71,8 @@ router.get("/settings", requireAdmin, async (req, res) => {
     const d = await apiGet("/api/admin/settings", req.session.token);
     res.render("admin/settings", { title: "Site Settings - Admin", settings: d.settings });
   } catch (e) {
-    res.render("admin/settings", { title: "Site Settings - Admin", settings: {} });
+    res.locals.loadError = true;
+    res.render("admin/settings", { title: req.t("adm_settings"), settings: {} });
   }
 });
 
@@ -258,7 +259,7 @@ router.get("/backup-database", requireAdmin, async (req, res) => {
 // ============================================================================
 router.get("/branding", requireAdmin, async (req, res) => {
   let settings = res.locals.branding;
-  try { settings = (await apiGet("/api/admin/branding", req.session.token)).settings; } catch (e) { /* fall back */ }
+  try { settings = (await apiGet("/api/admin/branding", req.session.token)).settings; } catch (e) { res.locals.loadError = true; }
   res.render("admin/branding", { title: "Branding & Identity - Admin", settings });
 });
 
@@ -287,8 +288,8 @@ router.post("/branding", requireAdmin, upload.fields([{ name: "logo", maxCount: 
 // ============================================================================
 router.get("/smtp", requireAdmin, async (req, res) => {
   let settings = {}, logs = [];
-  try { settings = (await apiGet("/api/admin/smtp", req.session.token)).settings; } catch (e) { /* empty */ }
-  try { logs = (await apiGet("/api/admin/smtp/log", req.session.token)).logs || []; } catch (e) { /* empty */ }
+  try { settings = (await apiGet("/api/admin/smtp", req.session.token)).settings; } catch (e) { res.locals.loadError = true; }
+  try { logs = (await apiGet("/api/admin/smtp/log", req.session.token)).logs || []; } catch (e) { res.locals.loadError = true; }
   res.render("admin/smtp", { title: "SMTP & Email - Admin", settings, logs });
 });
 
@@ -320,9 +321,9 @@ router.get("/ai", requireAdmin, async (req, res) => {
   try {
     const d = await apiGet("/api/ai/admin/config", req.session.token);
     settings = d.settings || {}; models = d.models || []; defaultModel = d.default_model || defaultModel;
-  } catch (e) { /* empty */ }
-  try { conversations = (await apiGet("/api/ai/admin/conversations", req.session.token)).conversations || []; } catch (e) { /* empty */ }
-  try { knowledge = await apiGet("/api/ai/admin/knowledge", req.session.token); } catch (e) { /* optional */ }
+  } catch (e) { res.locals.loadError = true; }
+  try { conversations = (await apiGet("/api/ai/admin/conversations", req.session.token)).conversations || []; } catch (e) { res.locals.loadError = true; }
+  try { knowledge = await apiGet("/api/ai/admin/knowledge", req.session.token); } catch (e) { res.locals.loadError = true; }
   res.render("admin/ai", { title: "AI Assistant - Admin", settings, models, conversations, knowledge, defaultModel });
 });
 
@@ -331,8 +332,8 @@ router.get("/ai", requireAdmin, async (req, res) => {
 // ============================================================================
 router.get("/content", requireAdmin, async (req, res) => {
   let antid = [], resources = [], reference = null;
-  try { const d = await apiGet("/api/admin/content/antid", req.session.token); antid = d.entries || []; reference = d.reference; } catch (e) { /* empty */ }
-  try { resources = (await apiGet("/api/admin/content/resources", req.session.token)).resources || []; } catch (e) { /* empty */ }
+  try { const d = await apiGet("/api/admin/content/antid", req.session.token); antid = d.entries || []; reference = d.reference; } catch (e) { res.locals.loadError = true; }
+  try { resources = (await apiGet("/api/admin/content/resources", req.session.token)).resources || []; } catch (e) { res.locals.loadError = true; }
   res.render("admin/content", { title: "Content Manager - Admin", antid, resources, reference });
 });
 
@@ -372,7 +373,7 @@ router.get("/reviews", requireAdmin, async (req, res) => {
   try {
     const d = await apiGet("/api/reviews/admin", req.session.token, { status: req.query.status });
     reviews = d.reviews || []; counts = d.counts || counts;
-  } catch (e) { /* empty */ }
+  } catch (e) { res.locals.loadError = true; }
   res.render("admin/reviews", { title: "Review Moderation - Admin", reviews, counts, filter: req.query.status });
 });
 
@@ -408,14 +409,14 @@ router.get("/live-chat", requireAdmin, async (req, res) => {
   try {
     const d = await apiGet("/api/support/admin/sessions", req.session.token);
     sessions = d.sessions || []; unread = d.unread_total || 0;
-  } catch (e) { /* empty */ }
+  } catch (e) { res.locals.loadError = true; }
   res.render("admin/live_chat", { title: "Live Chat Inbox - Admin", sessions, unread });
 });
 
 // Live Activity feed admin view + announcement
 router.get("/activity", requireAdmin, async (req, res) => {
   let events = [];
-  try { events = (await apiGet("/api/admin/activity", req.session.token)).events || []; } catch (e) { /* empty */ }
+  try { events = (await apiGet("/api/admin/activity", req.session.token)).events || []; } catch (e) { res.locals.loadError = true; }
   res.render("admin/activity", { title: "Live Activity - Admin", events });
 });
 

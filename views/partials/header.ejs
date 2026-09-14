@@ -222,6 +222,17 @@
     html[dir="rtl"] .fa-caret-right, html[dir="rtl"] .fa-caret-left,
     html[dir="rtl"] .fa-reply, html[dir="rtl"] .fa-sign-out-alt,
     html[dir="rtl"] .fa-arrow-right-to-bracket, html[dir="rtl"] .fa-arrow-right-from-bracket{ transform:scaleX(-1); }
+    @media(max-width:1199px){
+      #navMain { max-height:calc(100dvh - 64px); overflow-y:auto; }
+      #navMain .dropdown-menu { max-width:100%; }
+    }
+    .account-page { overflow-wrap:anywhere; }
+    .dash-wrapper, .admin-wrapper { min-width:0; }
+    .dash-stat > div, .stat-card > div { min-width:0; overflow-wrap:anywhere; }
+    @media(max-width:575px){
+      .dash-stat, .stat-card { padding:12px !important; gap:8px !important; flex-wrap:wrap; }
+      .card-header { flex-wrap:wrap; gap:8px; }
+    }
     /* Skip link (a11y) */
     .bo-skip{ position:absolute; <%= _dir==='rtl'?'right':'left' %>:-9999px; top:0; z-index:2000; background:#fff; color:var(--primary); padding:.6rem 1rem; border-radius:0 0 10px 0; font-weight:700; }
     .bo-skip:focus{ <%= _dir==='rtl'?'right':'left' %>:0; }
@@ -245,7 +256,7 @@
 <body>
   <a class="bo-skip" href="#bo-main"><%= _t('common_skip') %></a>
   <!-- ================= Navbar ================= -->
-  <nav class="navbar navbar-expand-lg sticky-top" aria-label="<%= _t('nav_home') %>">
+  <nav class="navbar navbar-expand-xl sticky-top" aria-label="<%= _t('nav_home') %>">
     <div class="container">
       <!-- The logo artwork already carries the BloodOra wordmark, so the header
            renders the image alone — a separate name beside it was a duplicate.
@@ -258,7 +269,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navMain">
-        <ul class="navbar-nav me-auto align-items-lg-center">
+        <ul class="navbar-nav me-auto align-items-xl-center">
           <li class="nav-item"><a class="nav-link<%= isActive('/') %>" href="/"><i class="fas fa-home"></i><%= _t('nav_home') %></a></li>
           <li class="nav-item"><a class="nav-link<%= isActive('/donors') %>" href="/donors"><i class="fas fa-users"></i><%= _t('nav_donors') %></a></li>
           <li class="nav-item"><a class="nav-link<%= isActive('/blood-requests') %>" href="/blood-requests"><i class="fas fa-tint"></i><%= _t('nav_requests') %></a></li>
@@ -278,7 +289,7 @@
           </li>
         </ul>
 
-        <ul class="navbar-nav align-items-lg-center gap-1">
+        <ul class="navbar-nav align-items-xl-center gap-1">
           <!-- Language switch: English / বাংলা / العربية -->
           <li class="nav-item dropdown me-1">
             <button class="lang-toggle" data-bs-toggle="dropdown" title="<%= _t('nav_language') %>">
@@ -311,30 +322,29 @@
             <!-- Real notifications: unread message count from the backend -->
             <li class="nav-item">
               <a class="nav-link position-relative" href="/messages" aria-label="<%= _t('notif_title') %>">
-                <i class="fas fa-bell"></i><span class="d-none d-xl-inline"><%= _t('notif_title') %></span>
+                <i class="fas fa-bell"></i>
                 <span id="bo-unread-pill" class="badge bg-danger ms-1 d-none" aria-live="polite">0</span>
               </a>
             </li>
-            <% if (currentUser.is_admin) { %><li class="nav-item"><a class="nav-link" href="/admin"><i class="fas fa-cog"></i><span class="d-none d-xl-inline"><%= _t('nav_admin') %></span></a></li><% } %>
-            <li class="nav-item"><a class="nav-link<%= isActive('/dashboard') %>" href="/dashboard"><i class="fas fa-gauge-high"></i><span class="d-none d-xl-inline"><%= _t('nav_dashboard') %></span></a></li>
-            <li class="nav-item"><a class="nav-link<%= isActive('/dashboard/orders') %>" href="/dashboard/orders"><i class="fas fa-box"></i><span class="d-none d-xl-inline"><%= _t('nav_my_orders') %></span></a></li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff; border:1px solid var(--border); border-radius:999px; padding:.35rem .9rem .35rem .45rem !important;">
+              <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" id="account-menu" aria-label="<%= _t('account_menu') %>" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff; border:1px solid var(--border); border-radius:999px; padding:.35rem .9rem .35rem .45rem !important;">
                 <% if (currentUser.image_file && currentUser.image_file !== 'default.jpg') { %>
                   <img src="/uploads/<%= currentUser.image_file %>" alt="<%= currentUser.name %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                 <% } else { %>
                   <img src="https://ui-avatars.com/api/?background=<%= (_p||'#e31b23').replace('#','') %>&color=fff&name=<%= encodeURIComponent(currentUser.name) %>&size=64&bold=true" alt="<%= currentUser.name %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                 <% } %>
-                <span class="d-none d-lg-inline fw-bold" style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= currentUser.name.split(' ')[0] %></span>
+                <span class="fw-bold" style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= currentUser.name.split(' ')[0] %></span>
               </a>
               <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2" style="min-width:230px;">
+                <% if (currentUser.is_admin) { %><li><a class="dropdown-item rounded-3" href="/admin"><i class="fas fa-cog me-2 text-danger"></i><%= _t('adm_dashboard') %></a></li><% } %>
                 <li><a class="dropdown-item rounded-3" href="/dashboard"><i class="fas fa-gauge-high me-2 text-danger"></i><%= _t('nav_dashboard') %></a></li>
-                <li><a class="dropdown-item rounded-3" href="/donors/profile/my"><i class="fas fa-user me-2 text-danger"></i><%= _t('nav_my_profile') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/dashboard/orders"><i class="fas fa-box me-2 text-danger"></i><%= _t('nav_my_orders') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/profile"><i class="fas fa-user me-2 text-danger"></i><%= _t('nav_my_profile') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/messages"><i class="fas fa-envelope me-2 text-danger"></i><%= _t('nav_messages') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/reviews/mine"><i class="fas fa-star me-2 text-danger"></i><%= _t('nav_my_reviews') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/dashboard/requests"><i class="fas fa-tint me-2 text-danger"></i><%= _t('nav_my_requests') %></a></li>
                 <li><a class="dropdown-item rounded-3" href="/dashboard/security"><i class="fas fa-shield-halved me-2 text-danger"></i><%= _t('nav_security') %></a></li>
-                <li><a class="dropdown-item rounded-3" href="/donors/profile/edit"><i class="fas fa-edit me-2 text-danger"></i><%= _t('nav_edit_profile') %></a></li>
+                <li><a class="dropdown-item rounded-3" href="/profile/edit"><i class="fas fa-edit me-2 text-danger"></i><%= _t('nav_edit_profile') %></a></li>
                 <% if (!currentUser.is_verified && currentUser.age && currentUser.age>=18) { %>
                   <li><hr class="dropdown-divider"></li>
                   <li>
@@ -348,7 +358,7 @@
                   <li><a class="dropdown-item rounded-3 text-warning fw-bold" href="/profile/switch-back"><i class="fas fa-undo me-2"></i><%= _t('nav_switch_back') %></a></li>
                 <% } %>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item rounded-3" href="/logout"><i class="fas fa-sign-out-alt me-2 text-danger"></i><%= _t('nav_logout') %></a></li>
+                <li><form action="/logout" method="POST"><button class="dropdown-item rounded-3" type="submit"><i class="fas fa-sign-out-alt me-2 text-danger"></i><%= _t('nav_logout') %></button></form></li>
               </ul>
             </li>
           <% } else { %>
@@ -360,6 +370,9 @@
     </div>
   </nav>
 
+  <% if (typeof loadError !== 'undefined' && loadError) { %>
+    <div class="container mt-3"><div class="alert alert-warning" role="alert"><%= _t('common_load_failed') %> <a href="<%= currentPath %>"><%= _t('common_retry') %></a></div></div>
+  <% } %>
   <!-- ================= Flash messages ================= -->
   <% if (typeof flash !== 'undefined' && flash) { %>
     <div class="container mt-3">

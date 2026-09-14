@@ -150,8 +150,9 @@ that double-escapes and leaks a literal `&#39;` onto the page.
   HMAC-signed `bloodora.session` cookie (`src/middleware/cookieStore.js`)
   instead of express-session's in-memory store. Serverless functions are
   short-lived and not shared, so an in-memory store would log users out at
-  random and leaks memory. Nothing sensitive is trusted from the client — the
-  cookie cannot be read or altered without `SESSION_SECRET`.
+  random and leaks memory. The cookie is signed, not encrypted: its owner can read its
+  contents, but cannot alter them without `SESSION_SECRET`. Authorization is
+  rechecked against the API.
 - Admin routes require `is_admin`, super-admin routes `is_super_admin`.
 - Impersonation: super admin gets a token for the target user; the frontend
   keeps the admin token to switch back.
@@ -197,3 +198,44 @@ that double-escapes and leaks a literal `&#39;` onto the page.
   backend side.
 - Vercel free tier function timeouts apply to long requests (none of the
   current endpoints are long-running).
+
+## Account routes and frontend browser tests
+
+The canonical authenticated pages are `/dashboard`, `/profile`, `/profile/edit`
+and `/admin`; `/admin/dashboard` and the old `/donors/profile/*` URLs remain
+compatible. Normal users receive **403** on admin routes; anonymous users go to
+Login. Login/register always go to the registered role-specific landing page.
+
+Profile edits forward multipart fields to **PUT `/api/users/me`**. The frontend
+requires an updated account response before showing success. Failed submissions
+retain text and display an error; image files must be selected again. Donation
+status uses existing user fields; no donation-history records are synthesized.
+
+Production session handling requires both `SESSION_SECRET` and HTTPS proxy
+recognition (`trust proxy`); `sessionResponseContext` preserves cookie writes
+when multipart callbacks lose their async context. `/api/auth/me` is revalidated
+on each request rather than trusting cached roles.
+
+```bash
+npm ci
+npm run build                  # EJS/JS + Vercel packaging validation (no SPA bundle)
+npm test                       # unit, rendering and deployment regressions
+npx playwright install --with-deps chromium
+npm run test:browser            # real Chromium, NODE_ENV=production
+```
+
+Browser tests launch an **isolated contract-fixture API** on loopback `4597` and
+the actual frontend on `4599`. They submit login/registration/profile forms and
+exercise guards, API failures, logout, history, mobile layouts and en/bn UI.
+Fixtures are test-only, never imported by the application, and **do not prove
+live database persistence**. The test frontend uses an explicit test secret;
+never use that secret or those fixture identities in a deployment.
+
+On a network-restricted runner, `BLOODORA_OFFLINE_ASSETS=1` supplies test-only
+local copies of the existing Bootstrap/Font Awesome and matching font families;
+logo/avatar assets use local test assets. `BROWSER_EXECUTABLE` can point to an
+installed Chromium. Reports, traces and screenshots go under ignored `.tmp/`.
+
+See [the authenticated frontend audit](docs/frontend-account-audit.md) for the
+route inventory, exact changes and verification limits. Vercel rewrites are
+unchanged: this is an Express/EJS frontend, not a client-side SPA.

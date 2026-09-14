@@ -12,7 +12,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 
 import { loadUser } from "./src/middleware/auth.js";
-import { BACKEND_URL } from "./src/api.js";
+import { BACKEND_URL, apiPageBudget } from "./src/api.js";
 
 import authRoutes from "./src/routes/auth.js";
 import pageRoutes from "./src/routes/pages.js";
@@ -25,10 +25,11 @@ import reviewRoutes from "./src/routes/reviews.js";
 import supportRoutes from "./src/routes/support.js";
 import aiRoutes from "./src/routes/ai.js";
 import dashboardRoutes from "./src/routes/dashboard.js";
+import profileRoutes from "./src/routes/profile.js";
 
 import { siteContext } from "./src/middleware/site.js";
 import { DEFAULT_LANG } from "./src/i18n.js";
-import { CookieSessionStore, sessionContext } from "./src/middleware/cookieStore.js";
+import { CookieSessionStore, sessionContext, sessionResponseContext } from "./src/middleware/cookieStore.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,8 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === "production";
+// Vercel terminates TLS before Express. Secure connect.sid must still be sent.
+if (isProd) app.set("trust proxy", 1);
 
 // ---------- View Engine ----------
 app.set("view engine", "ejs");
@@ -79,8 +82,12 @@ app.use(session({
   },
 }));
 
+app.use(sessionResponseContext);
+
 // ---------- Global locals ----------
 app.use((req, res, next) => {
+  // Do not cache account pages or replay their authenticated navbar after logout.
+  res.set("Cache-Control", "private, no-store");
   res.locals.session = req.session;
   res.locals.backendUrl = BACKEND_URL; // available to views if ever needed
   // Cart count for navbar
@@ -99,6 +106,7 @@ app.use((req, res, next) => {
 
 // Language + site identity (branding) — must run before loadUser so every
 // handler and view has `t()`, `lang`, `dir` and `branding` available.
+app.use(apiPageBudget);
 app.use(siteContext);
 
 // Load current user from the backend API (JWT kept in session)
@@ -131,6 +139,7 @@ app.use("/messages", messageRoutes);
 app.use("/reviews", reviewRoutes);
 app.use("/support", supportRoutes);   // Live Messaging (human support)
 app.use("/ai-help", aiRoutes);        // Live AI Help (Groq / Qwen3.6 27B)
+app.use("/profile", profileRoutes);
 app.use("/dashboard", dashboardRoutes); // User dashboard (real API data only)
 
 // Aliases for compatibility with old URL names
@@ -149,8 +158,8 @@ app.post("/admin/shop/order/:id/confirm-payment", (req, res) => res.redirect(307
 app.post("/admin/shop/order/:id/update-status", (req, res) => res.redirect(307, `/shop/admin/order/${req.params.id}/update-status`));
 // Old Flask donor/profile root aliases
 app.get("/profile/view/:id", (req, res) => res.redirect(`/donors/profile/view/${req.params.id}`));
-app.get("/profile/my", (req, res) => res.redirect("/donors/profile/my"));
-app.get("/profile/edit", (req, res) => res.redirect("/donors/profile/edit"));
+app.get("/profile/my", (req, res) => res.redirect("/profile"));
+
 app.post("/toggle_status", (req, res) => res.redirect(307, "/donors/toggle_status"));
 app.post("/apply-for-verification", (req, res) => res.redirect(307, "/donors/apply-for-verification"));
 // Old Flask admin messages → new

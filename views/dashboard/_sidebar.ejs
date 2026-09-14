@@ -11,7 +11,7 @@
 %>
 <style>
   .dash-wrapper{ display:flex; min-height:70vh; gap:1.5rem; }
-  .dash-sidebar{ width:264px; flex-shrink:0; background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#fff; border-radius:20px; padding:18px; position:sticky; top:88px; height:fit-content; }
+  .dash-sidebar{ width:264px; min-width:0; max-width:100%; flex-shrink:0; background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%); color:#fff; border-radius:20px; padding:18px; position:sticky; top:88px; height:fit-content; }
   .dash-sidebar a{ color:#cbd5e1; text-decoration:none; display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:12px; font-weight:600; font-size:.88rem; transition:all .18s; }
   .dash-sidebar a:hover{ background:rgba(255,255,255,.08); color:#fff; }
   .dash-sidebar a.active{ background:linear-gradient(135deg,var(--primary),var(--accent)); box-shadow:0 8px 20px color-mix(in srgb, var(--primary) 30%, transparent); color:#fff; }
@@ -20,8 +20,8 @@
   @media(max-width:991px){
     .dash-sidebar{ width:100%; position:static; }
     .dash-wrapper{ flex-direction:column; }
-    .dash-nav{ display:flex; overflow-x:auto; gap:6px; padding-bottom:4px; }
-    .dash-nav a{ white-space:nowrap; }
+    .dash-nav{ display:flex !important; overflow-x:auto; gap:6px; padding-bottom:4px; }
+    .dash-nav a{ white-space:nowrap; flex-shrink:0; }
     .dash-sidebar .side-label{ display:none; }
   }
 </style>
@@ -51,13 +51,14 @@
     <div class="side-label"><%= _t2('foot_contact') %></div>
     <a href="/messages"><i class="fas fa-envelope"></i><span><%= _t2('msg_title') %></span></a>
     <a href="/reviews/mine"><i class="fas fa-star"></i><span><%= _t2('nav_my_reviews') %></span></a>
-    <a href="/donors/profile/my"><i class="fas fa-user"></i><span><%= _t2('nav_my_profile') %></span></a>
-    <a href="/donors/profile/edit"><i class="fas fa-user-pen"></i><span><%= _t2('nav_edit_profile') %></span></a>
+    <a href="/profile"><i class="fas fa-user"></i><span><%= _t2('nav_my_profile') %></span></a>
+    <a href="/profile/edit"><i class="fas fa-user-pen"></i><span><%= _t2('nav_edit_profile') %></span></a>
     <div class="side-label"><%= _t2('nav_security') %></div>
     <%- dlink('security', '/dashboard/security', 'fa-shield-halved', _t2('sec_title')) %>
   </nav>
   <hr style="border-color:rgba(255,255,255,.08);">
   <div class="d-grid gap-2">
+    <form action="/logout" method="POST"><button type="submit" class="btn btn-outline-light btn-sm rounded-pill w-100"><i class="fas fa-sign-out-alt me-2"></i><%= _t2('nav_logout') %></button></form>
     <button type="button" id="dash-open-support" class="btn btn-light btn-sm rounded-pill" style="justify-content:center;"><i class="fas fa-headset me-2"></i><%= _t2('chat_title') %></button>
     <a href="/" class="btn btn-outline-light btn-sm rounded-pill" style="justify-content:center; border-color:rgba(255,255,255,.2); color:#fff;"><i class="fas fa-home me-2"></i><%= _t2('err_home') %></a>
   </div>

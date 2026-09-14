@@ -4,13 +4,15 @@
 import express from "express";
 import multer from "multer";
 import { apiGet, apiPost, apiPostForm, buildFormData } from "../api.js";
-import { invalidateUserCache } from "../middleware/auth.js";
+import { invalidateUserCache, normalizeUser, accountHome } from "../middleware/auth.js";
 import { bangladeshData as localBangladeshData } from "../utils/locations.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
 
 function setAuthSession(req, token, user) {
+  if (typeof token !== "string" || !token) throw new Error(req.t("auth_unavailable"));
+  user = normalizeUser(user);
   req.session.token = token;
   req.session.userId = user.id;
   req.session.userCache = { user, at: Date.now() };
@@ -18,7 +20,7 @@ function setAuthSession(req, token, user) {
 
 // GET Register
 router.get("/register", async (req, res) => {
-  if (req.user) return res.redirect("/");
+  if (req.user) return res.redirect(accountHome(req.user));
   let bangladeshData = localBangladeshData;
   try {
     const d = await apiGet("/api/meta/locations");
@@ -44,7 +46,7 @@ router.post("/register", upload.single("profile_pic"), async (req, res) => {
     const d = await apiPostForm("/api/auth/register", fd);
     setAuthSession(req, d.token, d.user);
     req.session.flash = { type: "success", message: d.message };
-    return res.redirect(d.user && (d.user.is_admin || d.user.is_super_admin) ? "/admin" : "/dashboard");
+    return res.redirect(accountHome(req.session.userCache.user));
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Registration failed." };
     return res.redirect("/register");
@@ -53,7 +55,7 @@ router.post("/register", upload.single("profile_pic"), async (req, res) => {
 
 // GET Login
 router.get("/login", (req, res) => {
-  if (req.user) return res.redirect("/");
+  if (req.user) return res.redirect(accountHome(req.user));
   res.render("login", { title: `${req.t("nav_login")} - ${res.locals.siteName}` });
 });
 
@@ -63,20 +65,10 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     const d = await apiPost("/api/auth/login", { email, password });
     setAuthSession(req, d.token, d.user);
-    // Keep the two protected areas separate: /dashboard is the normal user's
-    // dashboard, while administrators must enter the admin dashboard.  The
-    // old unconditional /dashboard redirect made admin logins land in the
-    // wrong area (and, on deployments where that legacy page was absent,
-    // appear as a 404).  Only honour a safe return URL for non-admin users;
-    // never let a normal user be redirected into the admin area.
-    const requestedNext = String(req.query.next || "");
-    const isAdmin = Boolean(d.user && (d.user.is_admin || d.user.is_super_admin));
-    const next = isAdmin
-      ? (requestedNext.startsWith("/admin") ? requestedNext : "/admin")
-      : (requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.startsWith("/admin")
-        ? requestedNext
-        : "/dashboard");
-    req.session.flash = { type: "success", message: d.message || `👋 Welcome back, ${d.user.name}!` };
+    // Canonical, registered destinations only. Do not accept arbitrary `next`
+    // URLs (including missing pages, logout or a different role's area).
+    const next = accountHome(req.session.userCache.user);
+    req.session.flash = { type: "success", message: req.t("dash_welcome", { name: d.user.name }) };
     return res.redirect(next);
   } catch (e) {
     req.session.flash = { type: "danger", message: e.message || "❌ Login error." };
@@ -85,13 +77,16 @@ router.post("/login", async (req, res) => {
 });
 
 // Logout
-router.get("/logout", async (req, res) => {
+router.route("/logout").get(logout).post(logout);
+async function logout(req, res) {
   try {
     if (req.session.token) await apiPost("/api/auth/logout", {}, req.session.token);
   } catch (e) { /* best effort */ }
   invalidateUserCache(req);
-  req.session.destroy(() => {});
-  res.redirect("/");
-});
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid", { path: "/" });
+    res.redirect("/");
+  });
+}
 
 export default router;
