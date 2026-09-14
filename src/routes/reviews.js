@@ -55,7 +55,7 @@ router.post("/", requireLogin, async (req, res) => {
 // GET /reviews/mine — the signed-in user's own reviews
 router.get("/mine", requireLogin, async (req, res) => {
   let reviews = [];
-  try { reviews = (await apiGet("/api/reviews/mine", req.session.token)).reviews || []; } catch (e) { /* empty */ }
+  try { reviews = (await apiGet("/api/reviews/mine", req.session.token)).reviews || []; } catch (e) { res.locals.loadError = true; }
   const label = { pending: req.t("rev_pending"), approved: req.t("rev_approved"), rejected: req.t("rev_rejected") };
   res.render("my_reviews", { title: `${req.t("rev_write")} - ${res.locals.siteName}`, reviews, label });
 });

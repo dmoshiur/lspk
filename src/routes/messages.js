@@ -11,7 +11,8 @@ router.get("/", requireLogin, async (req, res) => {
     res.render("messages", { title: `${req.t("msg_title")} - ${res.locals.siteName}`, received: d.received, sent: d.sent, unread_count: d.unread_count });
   } catch (e) {
     console.error(e.message);
-    res.redirect("/");
+    res.locals.loadError = true;
+    res.status(502).render("messages", { title: req.t("msg_title"), received: [], sent: [], unread_count: null });
   }
 });
 
@@ -64,7 +65,8 @@ router.get("/admin/messages", requireAdmin, async (req, res) => {
     const d = await apiGet("/api/messages/admin/list", req.session.token);
     res.render("admin/messages", { title: "Admin Messages", messages: d.messages, unread: d.unread });
   } catch (e) {
-    res.render("admin/messages", { title: "Admin Messages", messages: [], unread: 0 });
+    res.locals.loadError = true;
+    res.status(502).render("admin/messages", { title: req.t("adm_messages"), messages: [], unread: null });
   }
 });
 

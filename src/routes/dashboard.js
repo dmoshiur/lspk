@@ -4,7 +4,7 @@
 // (Promise.allSettled per section) — a section that fails renders its own
 // error/empty state instead of breaking the page. Nothing is fabricated.
 import express from "express";
-import { apiGet, apiPost } from "../api.js";
+import { apiGet, apiPost, ApiError } from "../api.js";
 import { requireLogin } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -12,7 +12,11 @@ const router = express.Router();
 /** Fetch helpers that never throw — each returns { ok, value|error }. */
 async function tryGet(path, token, query = null) {
   try {
-    return { ok: true, value: await apiGet(path, token, query) };
+    const value = await apiGet(path, token, query);
+    const field = { "/api/shop/orders/mine": "orders", "/api/blood-requests/mine": "requests",
+      "/api/messages": "received", "/api/reviews/mine": "reviews" }[path];
+    if (!value || (field && !Array.isArray(value[field]))) throw new ApiError("Invalid activity response", 502);
+    return { ok: true, value };
   } catch (e) {
     return { ok: false, error: e };
   }

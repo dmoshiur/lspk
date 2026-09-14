@@ -4,21 +4,28 @@
 // Bearer token on every API call.
 import { apiGet, ApiError } from "../api.js";
 
-const USER_CACHE_MS = 20_000; // refresh /me at most every 20s per session
+// Only server-issued account flags grant admin access; donor role is unrelated.
+const flag = (v) => v === true || v === 1 || v === "1";
+export const isAdmin = (user) => !!user && (flag(user.is_admin) || flag(user.is_super_admin));
+export const accountHome = (user) => isAdmin(user) ? "/admin" : "/dashboard";
+export function normalizeUser(user) {
+  if (!user || user.id == null || typeof user.name !== "string") {
+    throw new ApiError("Invalid account response", 502);
+  }
+  return { ...user, is_admin: isAdmin(user), is_super_admin: flag(user.is_super_admin),
+    is_verified: flag(user.is_verified), can_donate: flag(user.can_donate) };
+}
 
 export async function loadUser(req, res, next) {
   res.locals.currentUser = null;
   res.locals.isAuthenticated = false;
   if (req.session && req.session.token) {
     try {
-      const cache = req.session.userCache;
-      if (cache && cache.user && Date.now() - (cache.at || 0) < USER_CACHE_MS) {
-        req.user = cache.user;
-      } else {
-        const data = await apiGet("/api/auth/me", req.session.token);
-        req.user = data.user;
-        req.session.userCache = { user: data.user, at: Date.now() };
-      }
+      // Revalidate the token and role on every request, including direct URLs,
+      // refresh and history navigation. Cached role flags must not grant access.
+      const data = await apiGet("/api/auth/me", req.session.token);
+      req.user = normalizeUser(data?.user);
+      req.session.userCache = { user: req.user, at: Date.now() };
       res.locals.currentUser = req.user;
       res.locals.isAuthenticated = true;
     } catch (e) {
@@ -29,6 +36,7 @@ export async function loadUser(req, res, next) {
         delete req.session.userId;
       } else {
         console.error("loadUser error:", e.message);
+        req.authError = e;
       }
     }
   }
@@ -40,25 +48,33 @@ export function invalidateUserCache(req) {
 }
 
 export function requireLogin(req, res, next) {
+  if (req.authError) {
+    // A temporary API failure is not a logout; preserve the token and show retry.
+    return next(Object.assign(new Error(req.t("auth_unavailable")), { status: 503 }));
+  }
   if (!req.user) {
-    req.session.flash = { type: "warning", message: "⚠️ Please login to continue." };
+    req.session.flash = { type: "warning", message: req.t("auth_login_required") };
     return res.redirect("/login");
   }
   next();
 }
 
 export function requireAdmin(req, res, next) {
-  if (!req.user || !req.user.is_admin) {
-    req.session.flash = { type: "danger", message: "❌ Admin access required." };
-    return res.redirect("/");
-  }
-  next();
+  requireLogin(req, res, (err) => {
+    if (err) return next(err);
+    if (!isAdmin(req.user)) return res.status(403).render("403", {
+      title: req.t("err_403_title"), requestPath: req.originalUrl,
+    });
+    next();
+  });
 }
 
 export function requireSuperAdmin(req, res, next) {
-  if (!req.user || !req.user.is_super_admin) {
-    req.session.flash = { type: "danger", message: "❌ Super Admin access required." };
-    return res.redirect("/admin");
-  }
-  next();
+  requireAdmin(req, res, (err) => {
+    if (err) return next(err);
+    if (!flag(req.user.is_super_admin)) return res.status(403).render("403", {
+      title: req.t("err_403_title"), requestPath: req.originalUrl,
+    });
+    next();
+  });
 }

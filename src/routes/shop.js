@@ -226,8 +226,7 @@ router.get("/admin/products", requireAdmin, async (req, res) => {
     const d = await apiGet("/api/admin/products", req.session.token);
     res.render("admin/products", { title: "Manage Products - Admin", products: d.products, layout: "admin" });
   } catch (e) {
-    req.session.flash = { type: "danger", message: "❌ Failed to load products." };
-    res.redirect("/admin");
+    res.status(502).render("admin/unavailable", { title: req.t("adm_products") });
   }
 });
 
@@ -297,7 +296,7 @@ router.get("/admin/orders", requireAdmin, async (req, res) => {
     const d = await apiGet("/api/admin/orders", req.session.token, { status: req.query.status });
     res.render("admin/orders", { title: "Manage Orders - Admin", orders: d.orders, filter: req.query.status });
   } catch (e) {
-    res.render("admin/orders", { title: "Manage Orders - Admin", orders: [], filter: null });
+    res.status(502).render("admin/unavailable", { title: req.t("adm_orders") });
   }
 });
 

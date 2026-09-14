@@ -23,6 +23,16 @@ export function langMeta(code) {
 }
 
 const dict = {
+  account_user: { en: "User", bn: "ব্যবহারকারী", ar: "مستخدم" },
+  account_menu: { en: "My account", bn: "আমার অ্যাকাউন্ট", ar: "حسابي" },
+  account_superadmin: { en: "Super Admin", bn: "সুপার অ্যাডমিন", ar: "المشرف الأعلى" },
+  auth_login_required: { en: "Please log in to continue.", bn: "চালিয়ে যেতে লগইন করুন।", ar: "يرجى تسجيل الدخول للمتابعة." },
+  auth_unavailable: { en: "Your account could not be loaded. Please retry shortly.", bn: "আপনার অ্যাকাউন্ট লোড করা যায়নি। একটু পরে আবার চেষ্টা করুন।", ar: "تعذر تحميل حسابك. يرجى المحاولة بعد قليل." },
+  prof_saved: { en: "Profile updated successfully.", bn: "প্রোফাইল সফলভাবে আপডেট হয়েছে।", ar: "تم تحديث الملف الشخصي بنجاح." },
+  prof_save_unconfirmed: { en: "We could not confirm the profile update. Please reload your profile before retrying. Your entered text is kept below; select your photo again if needed.", bn: "প্রোফাইল আপডেট নিশ্চিত করা যায়নি। আবার চেষ্টা করার আগে প্রোফাইল রিলোড করুন। আপনার লেখা নিচে রাখা হয়েছে; প্রয়োজনে ছবি আবার নির্বাচন করুন।", ar: "تعذر تأكيد تحديث الملف. أعد تحميل ملفك قبل المحاولة. احتفظنا بالنص أدناه؛ اختر الصورة مجدداً عند الحاجة." },
+  prof_api_missing: { en: "Profile update is unavailable: the API must provide PUT /api/users/me. Your changes have not been confirmed.", bn: "প্রোফাইল আপডেট উপলব্ধ নয়: API-তে PUT /api/users/me থাকতে হবে। আপনার পরিবর্তন নিশ্চিত করা হয়নি।", ar: "تحديث الملف غير متاح: يجب توفير PUT /api/users/me. لم يتم تأكيد تغييراتك." },
+  dash_donation: { en: "My donation status", bn: "আমার রক্তদানের অবস্থা", ar: "حالة تبرعي" },
+  dash_no_donation: { en: "No last donation recorded.", bn: "সর্বশেষ রক্তদানের তথ্য নেই।", ar: "لا يوجد تبرع سابق مسجل." },
   // ---------- navigation ----------
   nav_home:        { en: "Home",              bn: "হোম",                    ar: "الرئيسية" },
   nav_donors:      { en: "Donors",            bn: "দাতা",                   ar: "المتبرعون" },

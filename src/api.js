@@ -3,6 +3,12 @@
 // BACKEND_URL environment variable (set in Vercel: Project -> Settings ->
 // Environment Variables). Example: BACKEND_URL=https://bloodora-api.vercel.app
 import dotenv from "dotenv";
+import { AsyncLocalStorage } from "node:async_hooks";
+const pageDeadline = new AsyncLocalStorage();
+// One budget for branding, /me and page data, not 8 seconds per serial call.
+export function apiPageBudget(req, res, next) {
+  pageDeadline.run({ at: Date.now() + 8000, req }, next);
+}
 dotenv.config();
 
 export const BACKEND_URL = (process.env.BACKEND_URL || "http://localhost:4000").replace(/\/+$/, "");
@@ -30,9 +36,14 @@ export async function apiRequest(path, { method = "GET", token = null, json = nu
   }
 
   const headers = {};
+  const language = pageDeadline.getStore()?.req?.session?.lang;
+  if (["en", "bn", "ar"].includes(language)) headers["Accept-Language"] = language;
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const init = { method, headers };
+  // Bound JSON calls (including response-body reads); no unending page loads.
+  const remaining = Math.min(8000, (pageDeadline.getStore()?.at ?? Date.now() + 8000) - Date.now());
+  if (remaining <= 0) throw new ApiError("The API request timed out. Please retry.", 504);
+  const init = { method, headers, signal: AbortSignal.timeout(remaining) };
   if (formData) {
     init.body = formData; // fetch sets the multipart boundary itself
   } else if (json !== null && json !== undefined) {
@@ -58,7 +69,7 @@ export async function apiRequest(path, { method = "GET", token = null, json = nu
     throw new ApiError(`⚠️ Backend returned a non-JSON response (${res.status}).`, res.status);
   }
 
-  if (!res.ok || (data && data.success === false)) {
+  if (!res.ok || (data && (data.success === false || data.ok === false))) {
     const msg = (data && data.message) || `Request failed (${res.status})`;
     const err = new ApiError(msg, res.status, data);
     err.type = data && data.type;
@@ -109,11 +120,19 @@ export function buildFormData(fields = {}, file = null, fileField = "file") {
  */
 export async function proxyEventStream(req, res, backendPath) {
   let upstream;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    upstream = await fetch(BACKEND_URL + backendPath, { headers: { Accept: "text/event-stream" } });
+    const headers = { Accept: "text/event-stream" };
+    // Admin SSE uses the same verified API token as JSON calls. It must never
+    // become an anonymous upstream request or expose the bearer to the browser.
+    if (req.session?.token) headers.Authorization = `Bearer ${req.session.token}`;
+    upstream = await fetch(BACKEND_URL + backendPath, { headers, signal: controller.signal });
   } catch (e) {
     if (!res.headersSent) res.status(502).end();
     return;
+  } finally {
+    clearTimeout(timer); // bound connection only, not the established SSE stream
   }
   if (!upstream.ok || !upstream.body) {
     if (!res.headersSent) res.status(upstream.status || 502).end();
